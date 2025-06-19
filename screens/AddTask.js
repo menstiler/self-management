@@ -9,8 +9,9 @@ function AddTask({ navigation }) {
     duration: { days: 0, hours: 0, minutes: 0 },
     date: new Date(),
     description: "",
-    priorty: "low",
+    priority: "low",
     status: "not started",
+    goalId: "",
   });
 
   useLayoutEffect(() => {

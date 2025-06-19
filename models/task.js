@@ -1,5 +1,14 @@
 export default class Task {
-  constructor({ id, title, duration, date, description, priority, status }) {
+  constructor({
+    id,
+    title,
+    duration,
+    date,
+    description,
+    priority,
+    status,
+    goalId,
+  }) {
     this.id = id;
     this.title = title;
     this.duration = duration;
@@ -7,5 +16,6 @@ export default class Task {
     this.description = description;
     this.priority = priority;
     this.status = status;
+    this.goalId = goalId;
   }
 }

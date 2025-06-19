@@ -1,6 +1,5 @@
-import { useState, useCallback, useEffect, createRef } from "react";
+import { useState, useEffect, createRef } from "react";
 import { TextInput, View, Text, Button, Pressable } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
 import { useNavigation } from "@react-navigation/native";
@@ -12,20 +11,11 @@ function TaskForm({ task, onSave, onCancel }) {
   const [editingTask, setEditingTask] = useState(task);
   const navigation = useNavigation();
 
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        setEditingTask(task);
-      };
-    }, [])
-  );
-
   useEffect(() => {
     updateFormRef.current = updateInputHandler;
   }, []);
 
   function updateInputHandler(input, value) {
-    console.log(input, value);
     setEditingTask((currTask) => ({ ...currTask, [input]: value }));
   }
 
@@ -58,9 +48,9 @@ function TaskForm({ task, onSave, onCancel }) {
     onCancel();
   }
 
-  function openAction() {
+  function openAction(action) {
     navigation.navigate("Action", {
-      action: "status",
+      action: action,
     });
   }
 
@@ -75,8 +65,14 @@ function TaskForm({ task, onSave, onCancel }) {
       </View>
       <View>
         <Text>Status</Text>
-        <Pressable onPress={openAction}>
+        <Pressable onPress={() => openAction("status")}>
           <Text>{capitalizeWords(editingTask.status)}</Text>
+        </Pressable>
+      </View>
+      <View>
+        <Text>Goal</Text>
+        <Pressable onPress={() => openAction("goal")}>
+          <Text>{editingTask.goalId}</Text>
         </Pressable>
       </View>
       <View>
