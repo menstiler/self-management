@@ -1,11 +1,11 @@
 import { useContext } from "react";
 import { FlatList } from "react-native";
 import TaskItem from "./TaskItem";
-import { TasksContext } from "../store/tasks-context.js";
+import { DataContext } from "../store/data-context.js";
 import { sortTasksByTime } from "../util/task";
 
 function AllTask() {
-  const { tasks } = useContext(TasksContext);
+  const { tasks } = useContext(DataContext);
   const sortedTasks = sortTasksByTime([...tasks]);
 
   return (

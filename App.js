@@ -1,11 +1,10 @@
-import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import TaskList from "./screens/TaskList";
 import TaskDetail from "./screens/TaskDetail";
 import AddTask from "./screens/AddTask";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import TasksContextProvider from "./store/tasks-context";
+import DataContextProvider from "./store/data-context";
 import Action from "./screens/Action";
 
 const Stack = createNativeStackNavigator();
@@ -41,7 +40,7 @@ function TaskOverview() {
 
 export default function App() {
   return (
-    <TasksContextProvider>
+    <DataContextProvider>
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen
@@ -67,6 +66,6 @@ export default function App() {
           />
         </Stack.Navigator>
       </NavigationContainer>
-    </TasksContextProvider>
+    </DataContextProvider>
   );
 }

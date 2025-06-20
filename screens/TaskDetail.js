@@ -1,11 +1,11 @@
 import { useState, useEffect, useLayoutEffect, useContext } from "react";
 import { View, Text } from "react-native";
 
-import { TasksContext } from "../store/tasks-context.js";
+import { DataContext } from "../store/data-context.js";
 import TaskForm from "../components/TaskForm.js";
 
 function TaskDetail({ route, navigation }) {
-  const tasksCtx = useContext(TasksContext);
+  const dataCtx = useContext(DataContext);
   const [loading, setLoading] = useState(true);
   const [task, setTask] = useState();
 
@@ -14,8 +14,8 @@ function TaskDetail({ route, navigation }) {
   useEffect(() => {
     setLoading(true);
     if (taskId) {
-      const taskIndex = tasksCtx.tasks.findIndex((task) => task.id === taskId);
-      setTask(tasksCtx.tasks[taskIndex]);
+      const taskIndex = dataCtx.tasks.findIndex((task) => task.id === taskId);
+      setTask(dataCtx.tasks[taskIndex]);
     }
     setLoading(false);
   }, [taskId]);
@@ -35,12 +35,12 @@ function TaskDetail({ route, navigation }) {
   }
 
   function udpateTask(editingTask) {
-    tasksCtx.updateTask(taskId, editingTask);
+    dataCtx.updateTask(taskId, editingTask);
     setTask(editingTask);
   }
 
   function deleteTask(taskId) {
-    tasksCtx.deleteTask(taskId);
+    dataCtx.deleteTask(taskId);
   }
 
   return (

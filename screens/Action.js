@@ -1,4 +1,13 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Button,
+} from "react-native";
 import { updateFormRef } from "../components/TaskForm";
 import { capitalizeWords } from "../util/task";
 import { GOALS } from "../data";
@@ -31,24 +40,60 @@ function Action({ navigation, route }) {
   }
 
   function Goals() {
+    const [searchedGoal, setSearchedGoal] = useState("");
+
     function updateGoalHandler(goalId) {
       updateFormRef.current?.("goalId", goalId);
       navigation.goBack();
     }
 
+    function onChangeHandler(text) {
+      setSearchedGoal(text);
+    }
+
+    function addGoalHandler() {}
+
     return (
-      <ScrollView>
-        {GOALS.map((goal) => (
-          <Pressable
-            key={goal.id}
-            onPress={() => updateGoalHandler(goal.id)}
-          >
-            <View>
-              <Text>{capitalizeWords(goal.title)}</Text>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View>
+        <View>
+          <TextInput
+            placeholder="Search or create new Goal"
+            value={searchedGoal}
+            onChangeText={onChangeHandler}
+          />
+        </View>
+        {searchedGoal && (
+          <Button
+            title="Create New Goal"
+            onPress={addGoalHandler}
+          />
+        )}
+        <ScrollView>
+          {searchedGoal
+            ? GOALS.filter((goal) =>
+                goal.title.toLowerCase().includes(searchedGoal.toLowerCase())
+              ).map((goal) => (
+                <Pressable
+                  key={goal.id}
+                  onPress={() => updateGoalHandler(goal.id)}
+                >
+                  <View>
+                    <Text>{capitalizeWords(goal.title)}</Text>
+                  </View>
+                </Pressable>
+              ))
+            : GOALS.map((goal) => (
+                <Pressable
+                  key={goal.id}
+                  onPress={() => updateGoalHandler(goal.id)}
+                >
+                  <View>
+                    <Text>{capitalizeWords(goal.title)}</Text>
+                  </View>
+                </Pressable>
+              ))}
+        </ScrollView>
+      </View>
     );
   }
 

@@ -1,19 +1,19 @@
 import { useContext, useState, useEffect } from "react";
 import { View, Text } from "react-native";
-import { TasksContext } from "../store/tasks-context.js";
+import { DataContext } from "../store/data-context.js";
 import { TASKS } from "../data.js";
 import FilteredTasks from "../components/FilteredTasks.js";
 import AllTasks from "../components/AllTasks.js";
 
 function TaskList({ route }) {
   const [loading, setLoading] = useState(true);
-  const tasksCtx = useContext(TasksContext);
+  const dataCtx = useContext(DataContext);
 
   useEffect(() => {
     async function loadTasks() {
       setLoading(true);
       try {
-        tasksCtx.setTasks(TASKS);
+        dataCtx.setTasks(TASKS);
       } catch (error) {
         setError("Could not load tasks");
       }
@@ -30,7 +30,7 @@ function TaskList({ route }) {
     );
   }
 
-  if (tasksCtx?.tasks?.length === 0) {
+  if (dataCtx?.tasks?.length === 0) {
     return (
       <View>
         <Text>No Tasks Found</Text>

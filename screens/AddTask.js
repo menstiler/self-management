@@ -1,6 +1,6 @@
 import { useContext, useLayoutEffect, useState } from "react";
 import TaskForm from "../components/TaskForm";
-import { TasksContext } from "../store/tasks-context";
+import { DataContext } from "../store/data-context";
 
 const initialTaskState = {
   title: "",
@@ -13,7 +13,7 @@ const initialTaskState = {
 };
 
 function AddTask({ navigation }) {
-  const tasksCtx = useContext(TasksContext);
+  const dataCtx = useContext(DataContext);
   const [task, setTask] = useState(initialTaskState);
 
   useLayoutEffect(() => {
@@ -23,7 +23,7 @@ function AddTask({ navigation }) {
   }, [navigation]);
 
   function saveHandler(editingTask) {
-    tasksCtx.addTask(editingTask);
+    dataCtx.addTask(editingTask);
     navigation.goBack();
   }
 

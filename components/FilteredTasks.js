@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { FlatList } from "react-native";
 import TaskItem from "./TaskItem";
-import { TasksContext } from "../store/tasks-context.js";
+import { DataContext } from "../store/data-context.js";
 import { sortTasksByTime } from "../util/task";
 
 function isSameDay(dateA, dateB) {
@@ -13,7 +13,7 @@ function isSameDay(dateA, dateB) {
 }
 
 function FilteredTasks() {
-  const { tasks } = useContext(TasksContext);
+  const { tasks } = useContext(DataContext);
 
   const filteredTaskByDay = [...tasks].filter((task) => {
     return isSameDay(new Date(task.date), new Date());
