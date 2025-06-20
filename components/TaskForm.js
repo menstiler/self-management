@@ -7,7 +7,7 @@ import { capitalizeWords } from "../util/task";
 
 export const updateFormRef = createRef();
 
-function TaskForm({ task, onSave, onCancel }) {
+function TaskForm({ task, onSave, onCancel, onDelete }) {
   const [editingTask, setEditingTask] = useState(task);
   const navigation = useNavigation();
 
@@ -41,6 +41,9 @@ function TaskForm({ task, onSave, onCancel }) {
 
   function saveHandler() {
     onSave(editingTask);
+    if (!editingTask.id) {
+      setEditingTask(task);
+    }
   }
 
   function cancelHandler() {
@@ -52,6 +55,11 @@ function TaskForm({ task, onSave, onCancel }) {
     navigation.navigate("Action", {
       action: action,
     });
+  }
+
+  function deleteHandler() {
+    onDelete(editingTask.id);
+    navigation.goBack();
   }
 
   return (
@@ -150,6 +158,15 @@ function TaskForm({ task, onSave, onCancel }) {
           onPress={cancelHandler}
         />
       </View>
+      {editingTask.id && (
+        <View>
+          <Button
+            title="Delete Task"
+            onPress={deleteHandler}
+            color="red"
+          />
+        </View>
+      )}
     </View>
   );
 }

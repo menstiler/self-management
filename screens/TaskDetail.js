@@ -39,11 +39,16 @@ function TaskDetail({ route, navigation }) {
     setTask(editingTask);
   }
 
+  function deleteTask(taskId) {
+    tasksCtx.deleteTask(taskId);
+  }
+
   return (
     <TaskForm
       task={task}
       onSave={udpateTask}
       onCancel={() => {}}
+      onDelete={deleteTask}
     />
   );
 }

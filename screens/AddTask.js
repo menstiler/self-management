@@ -2,17 +2,19 @@ import { useContext, useLayoutEffect, useState } from "react";
 import TaskForm from "../components/TaskForm";
 import { TasksContext } from "../store/tasks-context";
 
+const initialTaskState = {
+  title: "",
+  duration: { days: 0, hours: 0, minutes: 0 },
+  date: new Date(),
+  description: "",
+  priority: "low",
+  status: "not started",
+  goalId: "",
+};
+
 function AddTask({ navigation }) {
   const tasksCtx = useContext(TasksContext);
-  const [task, setTask] = useState({
-    title: "",
-    duration: { days: 0, hours: 0, minutes: 0 },
-    date: new Date(),
-    description: "",
-    priority: "low",
-    status: "not started",
-    goalId: "",
-  });
+  const [task, setTask] = useState(initialTaskState);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -36,6 +38,7 @@ function AddTask({ navigation }) {
       task={task}
       onSave={saveHandler}
       onCancel={cancelHandler}
+      onDelete={() => {}}
     />
   );
 }
