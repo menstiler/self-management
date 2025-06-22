@@ -82,6 +82,12 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
         <Pressable onPress={() => openAction("goal")}>
           <Text>{editingTask.goalId}</Text>
         </Pressable>
+        {editingTask.goalId && (
+          <Button
+            title="Remove Goal"
+            onPress={() => updateInputHandler("goalId", "")}
+          />
+        )}
       </View>
       <View>
         <Text>Priority</Text>
