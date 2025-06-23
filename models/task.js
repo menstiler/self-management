@@ -7,7 +7,7 @@ export default class Task {
     description,
     priority,
     status,
-    goalId,
+    goals,
   }) {
     this.id = id;
     this.title = title;
@@ -16,6 +16,6 @@ export default class Task {
     this.description = description;
     this.priority = priority;
     this.status = status;
-    this.goalId = goalId;
+    this.goals = goals;
   }
 }

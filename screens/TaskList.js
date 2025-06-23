@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from "react";
 import { View, Text } from "react-native";
 import { DataContext } from "../store/data-context.js";
-import { TASKS } from "../data.js";
+import { GOALS, TASKS } from "../data.js";
 import FilteredTasks from "../components/FilteredTasks.js";
 import AllTasks from "../components/AllTasks.js";
 
@@ -10,16 +10,17 @@ function TaskList({ route }) {
   const dataCtx = useContext(DataContext);
 
   useEffect(() => {
-    async function loadTasks() {
+    async function loadData() {
       setLoading(true);
       try {
         dataCtx.setTasks(TASKS);
+        dataCtx.setGoals(GOALS);
       } catch (error) {
-        setError("Could not load tasks");
+        setError("Could not load data");
       }
       setLoading(false);
     }
-    loadTasks();
+    loadData();
   }, []);
 
   if (loading) {

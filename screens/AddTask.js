@@ -9,7 +9,7 @@ const initialTaskState = {
   description: "",
   priority: "low",
   status: "not started",
-  goalId: "",
+  goals: [],
 };
 
 function AddTask({ navigation }) {

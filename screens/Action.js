@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,14 @@ import {
   TextInput,
   Button,
 } from "react-native";
-import { updateFormRef } from "../components/TaskForm";
+import { updateFormRef, updateGoalRef } from "../components/TaskForm";
 import { capitalizeWords } from "../util/task";
 import { GOALS } from "../data";
+import { useContext } from "react";
+import { DataContext } from "../store/data-context";
 
 function Action({ navigation, route }) {
+  const dataCtx = useContext(DataContext);
   const action = route.params?.action;
 
   function Status() {
@@ -43,14 +46,14 @@ function Action({ navigation, route }) {
     const [searchedGoal, setSearchedGoal] = useState("");
 
     function updateGoalHandler(goalId) {
-      updateFormRef.current?.("goalId", goalId);
-      navigation.goBack();
+      updateGoalRef.current?.(goalId);
     }
 
     function onChangeHandler(text) {
       setSearchedGoal(text);
     }
 
+    // TODO add new goal
     function addGoalHandler() {}
 
     return (
@@ -70,19 +73,21 @@ function Action({ navigation, route }) {
         )}
         <ScrollView>
           {searchedGoal
-            ? GOALS.filter((goal) =>
-                goal.title.toLowerCase().includes(searchedGoal.toLowerCase())
-              ).map((goal) => (
-                <Pressable
-                  key={goal.id}
-                  onPress={() => updateGoalHandler(goal.id)}
-                >
-                  <View>
-                    <Text>{capitalizeWords(goal.title)}</Text>
-                  </View>
-                </Pressable>
-              ))
-            : GOALS.map((goal) => (
+            ? dataCtx.goals
+                .filter((goal) =>
+                  goal.title.toLowerCase().includes(searchedGoal.toLowerCase())
+                )
+                .map((goal) => (
+                  <Pressable
+                    key={goal.id}
+                    onPress={() => updateGoalHandler(goal.id)}
+                  >
+                    <View>
+                      <Text>{capitalizeWords(goal.title)}</Text>
+                    </View>
+                  </Pressable>
+                ))
+            : dataCtx.goals.map((goal) => (
                 <Pressable
                   key={goal.id}
                   onPress={() => updateGoalHandler(goal.id)}
@@ -100,7 +105,7 @@ function Action({ navigation, route }) {
   switch (action) {
     case "status":
       return <Status />;
-    case "goal":
+    case "goals":
       return <Goals />;
     default:
       return (

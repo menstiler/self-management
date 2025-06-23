@@ -4,15 +4,18 @@ import Goal from "../models/goal";
 
 export const DataContext = createContext({
   tasks: [],
-  addTask: ({ title, date, duration, priority, description }) => {},
+  addTask: ({ title, date, duration, priority, description, goals }) => {},
   setTasks: (tasks) => {},
   deleteTask: (id) => {},
-  updateTask: (id, { title, date, duration, priority, description }) => {},
+  updateTask: (
+    id,
+    { title, date, duration, priority, description, goals }
+  ) => {},
   goals: [],
-  addGoal: ({ id, title, description, deadline, progress }) => {},
+  addGoal: ({ id, title, description, deadline, progress, tasks }) => {},
   setGoals: (goals) => {},
   deleteGoal: (id) => {},
-  updateGoal: (id, { title, description, deadline, progress }) => {},
+  updateGoal: (id, { title, description, deadline, progress, tasks }) => {},
 });
 
 function dataReducer(state, action) {
@@ -21,7 +24,18 @@ function dataReducer(state, action) {
       // TODO use id from db
       const taskId = Math.random();
       const task = new Task({ taskId, ...action.payload });
-      return { ...state, tasks: [task, ...state.tasks] };
+
+      const updatedGoalsWithNewTask = state.goals.map((goal) =>
+        task.goals && task.goals.includes(goal.id)
+          ? { ...goal, tasks: [...(goal.tasks || []), task.id] }
+          : goal
+      );
+
+      return {
+        ...state,
+        tasks: [task, ...state.tasks],
+        goals: updatedGoalsWithNewTask,
+      };
     case "SET_TASKS":
       const tasks = action.payload.map((task) => new Task(task));
       return { ...state, tasks };
@@ -31,9 +45,28 @@ function dataReducer(state, action) {
       );
       const updatableTask = state.tasks[updatableTaskIndex];
       const updatedTaskItem = { ...updatableTask, ...action.payload.data };
+
+      const oldGoalIds = new Set(updatableTask.goals || []);
+      const newGoalIds = new Set(updatedTaskItem.goals || []);
+
+      const updatedGoals = state.goals.map((goal) => {
+        if (newGoalIds.has(goal.id) && !oldGoalIds.has(goal.id)) {
+          return { ...goal, tasks: [...(goal.tasks || []), id] };
+        }
+
+        if (!newGoalIds.has(goal.id) && oldGoalIds.has(goal.id)) {
+          return {
+            ...goal,
+            tasks: (goal.tasks || []).filter((taskId) => taskId !== id),
+          };
+        }
+
+        return goal;
+      });
+
       const updatableTasks = [...state.tasks];
       updatableTasks[updatableTaskIndex] = updatedTaskItem;
-      return { ...state, tasks: updatableTasks };
+      return { ...state, tasks: updatableTasks, goals: updatedGoals };
     case "DELETE_TASK":
       const updatedTasksAfterDelete = state.tasks.filter(
         (task) => task.id !== action.payload
@@ -90,7 +123,7 @@ function DataContextProvider({ children }) {
   }
 
   function setGoals(goals) {
-    dispatch({ type: "SET_GOALS", payload: tasks });
+    dispatch({ type: "SET_GOALS", payload: goals });
   }
 
   function deleteGoal(id) {
