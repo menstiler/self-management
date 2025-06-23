@@ -1,18 +1,22 @@
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, createRef, useContext } from "react";
 import { TextInput, View, Text, Button, Pressable } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
 import { useNavigation } from "@react-navigation/native";
 import { capitalizeWords } from "../util/task";
+import { DataContext } from "../store/data-context.js";
 
 export const updateFormRef = createRef();
+export const updateGoalRef = createRef();
 
 function TaskForm({ task, onSave, onCancel, onDelete }) {
+  const dataCtx = useContext(DataContext);
   const [editingTask, setEditingTask] = useState(task);
   const navigation = useNavigation();
 
   useEffect(() => {
     updateFormRef.current = updateInputHandler;
+    updateGoalRef.current = updateGoalHandler;
   }, []);
 
   function updateInputHandler(input, value) {
@@ -62,6 +66,19 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
     navigation.goBack();
   }
 
+  function updateGoalHandler(goalId) {
+    const updatedGoalIndex = editingTask.goals.findIndex(
+      (goal) => goal === goalId
+    );
+    const updatingGoal = updatedGoalIndex !== -1;
+    setEditingTask((currTask) => ({
+      ...currTask,
+      goals: updatingGoal
+        ? currTask.goals.filter((goal) => goal !== goalId)
+        : [...currTask.goals, goalId],
+    }));
+  }
+
   return (
     <View>
       <View>
@@ -78,15 +95,30 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
         </Pressable>
       </View>
       <View>
-        <Text>Goal</Text>
-        <Pressable onPress={() => openAction("goal")}>
-          <Text>{editingTask.goalId}</Text>
-        </Pressable>
-        {editingTask.goalId && (
+        <Text>Related Goals</Text>
+        {editingTask.goals.length < 1 ? (
           <Button
-            title="Remove Goal"
-            onPress={() => updateInputHandler("goalId", "")}
+            onPress={() => openAction("goals")}
+            title="Add Goal"
           />
+        ) : (
+          editingTask.goals.map((goal) => {
+            // TODO open goal screen on press
+            const taskGoal = dataCtx.goals.find(
+              (goalData) => goalData.id === goal
+            );
+            return (
+              <View key={taskGoal.id}>
+                <Pressable onPress={() => {}}>
+                  <Text>{taskGoal.title}</Text>
+                </Pressable>
+                <Button
+                  title="Remove Goal"
+                  onPress={() => updateGoalHandler(taskGoal.id)}
+                />
+              </View>
+            );
+          })
         )}
       </View>
       <View>
