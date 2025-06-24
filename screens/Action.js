@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   TextInput,
   Button,
 } from "react-native";
-import { updateFormRef, updateGoalRef } from "../components/TaskForm";
+import {
+  updateFormRef,
+  updateGoalRef,
+  getEditingTaskRef,
+} from "../components/TaskForm";
 import { capitalizeWords } from "../util/task";
-import { GOALS } from "../data";
 import { useContext } from "react";
 import { DataContext } from "../store/data-context";
 
@@ -44,8 +47,23 @@ function Action({ navigation, route }) {
 
   function Goals() {
     const [searchedGoal, setSearchedGoal] = useState("");
+    const [addedGoals, setAddedGoals] = useState([]);
+    const [editingTask, setEditingTask] = useState(
+      getEditingTaskRef.current?.()
+    );
 
-    function updateGoalHandler(goalId) {
+    useEffect(() => {
+      const task = getEditingTaskRef.current?.();
+      setEditingTask(task);
+    }, [getEditingTaskRef]);
+
+    function addGoalHandler(goalId) {
+      const task = getEditingTaskRef.current?.();
+      if (task.goals.includes(goalId)) return;
+      updateGoalRef.current?.(goalId);
+    }
+
+    function removeGoalHandler(goalId) {
       updateGoalRef.current?.(goalId);
     }
 
@@ -54,7 +72,28 @@ function Action({ navigation, route }) {
     }
 
     // TODO add new goal
-    function addGoalHandler() {}
+    function addNewGoalHandler() {}
+
+    function GoalItem({ goal }) {
+      return (
+        <View>
+          <Pressable
+            key={goal.id}
+            onPress={() => addGoalHandler(goal.id)}
+          >
+            <View>
+              <Text>{capitalizeWords(goal.title)}</Text>
+            </View>
+          </Pressable>
+          {editingTask.goals.includes(goal.id) && (
+            <Button
+              title="Remove Goal"
+              onPress={() => removeGoalHandler(goal.id)}
+            />
+          )}
+        </View>
+      );
+    }
 
     return (
       <View>
@@ -72,31 +111,22 @@ function Action({ navigation, route }) {
           />
         )}
         <ScrollView>
-          {searchedGoal
-            ? dataCtx.goals
-                .filter((goal) =>
-                  goal.title.toLowerCase().includes(searchedGoal.toLowerCase())
-                )
-                .map((goal) => (
-                  <Pressable
-                    key={goal.id}
-                    onPress={() => updateGoalHandler(goal.id)}
-                  >
-                    <View>
-                      <Text>{capitalizeWords(goal.title)}</Text>
-                    </View>
-                  </Pressable>
-                ))
-            : dataCtx.goals.map((goal) => (
-                <Pressable
-                  key={goal.id}
-                  onPress={() => updateGoalHandler(goal.id)}
-                >
-                  <View>
-                    <Text>{capitalizeWords(goal.title)}</Text>
-                  </View>
-                </Pressable>
-              ))}
+          {dataCtx.goals
+            .filter((goal) => {
+              if (searchedGoal) {
+                return goal.title
+                  .toLowerCase()
+                  .includes(searchedGoal.toLowerCase());
+              } else {
+                return goal;
+              }
+            })
+            .map((goal) => (
+              <GoalItem
+                key={goal.id}
+                goal={goal}
+              />
+            ))}
         </ScrollView>
       </View>
     );

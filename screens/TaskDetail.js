@@ -16,6 +16,7 @@ function TaskDetail({ route, navigation }) {
     if (taskId) {
       const taskIndex = dataCtx.tasks.findIndex((task) => task.id === taskId);
       setTask(dataCtx.tasks[taskIndex]);
+      dataCtx.updateEditingTask(dataCtx.tasks[taskIndex]);
     }
     setLoading(false);
   }, [taskId]);
@@ -34,9 +35,9 @@ function TaskDetail({ route, navigation }) {
     );
   }
 
-  function udpateTask(editingTask) {
-    dataCtx.updateTask(taskId, editingTask);
-    setTask(editingTask);
+  function udpateTask() {
+    dataCtx.updateTask(taskId, dataCtx.editingTask);
+    setTask(dataCtx.editingTask);
   }
 
   function deleteTask(taskId) {

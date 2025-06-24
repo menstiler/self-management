@@ -22,8 +22,8 @@ function AddTask({ navigation }) {
     });
   }, [navigation]);
 
-  function saveHandler(editingTask) {
-    dataCtx.addTask(editingTask);
+  function saveHandler() {
+    dataCtx.addTask(dataCtx.editingTask);
     navigation.goBack();
   }
 

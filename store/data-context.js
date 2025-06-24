@@ -16,6 +16,15 @@ export const DataContext = createContext({
   setGoals: (goals) => {},
   deleteGoal: (id) => {},
   updateGoal: (id, { title, description, deadline, progress, tasks }) => {},
+  editingTask: {},
+  updateEditingTask: ({
+    title,
+    date,
+    duration,
+    priority,
+    description,
+    goals,
+  }) => {},
 });
 
 function dataReducer(state, action) {
@@ -94,13 +103,19 @@ function dataReducer(state, action) {
         (goal) => goal.id !== action.payload
       );
       return { ...state, goals: updatedGoalsAfterDelete };
+    case "UPDATE_EDITING_TASK":
+      return { ...state, editingTask: action.payload };
     default:
       return state;
   }
 }
 
 function DataContextProvider({ children }) {
-  const [state, dispatch] = useReducer(dataReducer, { tasks: [], goals: [] });
+  const [state, dispatch] = useReducer(dataReducer, {
+    tasks: [],
+    goals: [],
+    editingTask: {},
+  });
 
   function addTask(taskData) {
     dispatch({ type: "ADD_TASK", payload: taskData });
@@ -134,6 +149,13 @@ function DataContextProvider({ children }) {
     dispatch({ type: "UPDATE_GOAL", payload: { id, data: goalData } });
   }
 
+  function updateEditingTask(editingTaskData) {
+    dispatch({
+      type: "UPDATE_EDITING_TASK",
+      payload: editingTaskData,
+    });
+  }
+
   const value = {
     tasks: state.tasks,
     addTask,
@@ -145,6 +167,8 @@ function DataContextProvider({ children }) {
     setGoals,
     deleteGoal,
     updateGoal,
+    editingTask: state.editingTask,
+    updateEditingTask,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

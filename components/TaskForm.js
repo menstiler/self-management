@@ -11,7 +11,6 @@ export const updateGoalRef = createRef();
 
 function TaskForm({ task, onSave, onCancel, onDelete }) {
   const dataCtx = useContext(DataContext);
-  const [editingTask, setEditingTask] = useState(task);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -20,21 +19,21 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
   }, []);
 
   function updateInputHandler(input, value) {
-    setEditingTask((currTask) => ({ ...currTask, [input]: value }));
+    dataCtx.updateEditingTask({ ...dataCtx.editingTask, [input]: value });
   }
 
   function updateDateHandler(_, date) {
-    setEditingTask((currTask) => ({
-      ...currTask,
+    dataCtx.updateEditingTask({
+      ...dataCtx.editingTask,
       date,
-    }));
+    });
   }
 
   function updateDurationHandler(input, value) {
-    setEditingTask((currTask) => ({
-      ...currTask,
+    dataCtx.updateEditingTask({
+      ...dataCtx.editingTask,
       duration: { ...currTask.duration, [input]: value },
-    }));
+    });
   }
 
   const priorities = {
@@ -44,14 +43,14 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
   };
 
   function saveHandler() {
-    onSave(editingTask);
-    if (!editingTask.id) {
-      setEditingTask(task);
+    onSave();
+    if (!dataCtx.editingTask.id) {
+      dataCtx.updateEditingTask(task);
     }
   }
 
   function cancelHandler() {
-    setEditingTask(task);
+    dataCtx.updateEditingTask(task);
     onCancel();
   }
 
@@ -67,16 +66,16 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
   }
 
   function updateGoalHandler(goalId) {
-    const updatedGoalIndex = editingTask.goals.findIndex(
+    const updatedGoalIndex = dataCtx.editingTask.goals.findIndex(
       (goal) => goal === goalId
     );
-    const updatingGoal = updatedGoalIndex !== -1;
-    setEditingTask((currTask) => ({
+    const addingGoal = updatedGoalIndex === -1;
+    dataCtx.updateEditingTask({
       ...currTask,
-      goals: updatingGoal
-        ? currTask.goals.filter((goal) => goal !== goalId)
-        : [...currTask.goals, goalId],
-    }));
+      goals: addingGoal
+        ? [...dataCtx.editingTask.goals, goalId]
+        : dataCtx.editingTask.goals.filter((goal) => goal !== goalId),
+    });
   }
 
   return (
@@ -85,31 +84,31 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
         <Text>Title</Text>
         <TextInput
           onChangeText={(value) => updateInputHandler("title", value)}
-          value={editingTask.title}
+          value={dataCtx.editingTask.title}
         />
       </View>
       <View>
         <Text>Status</Text>
         <Pressable onPress={() => openAction("status")}>
-          <Text>{capitalizeWords(editingTask.status)}</Text>
+          <Text>{capitalizeWords(dataCtx.editingTask.status)}</Text>
         </Pressable>
       </View>
       <View>
         <Text>Related Goals</Text>
-        {editingTask.goals.length < 1 ? (
+        {dataCtx.editingTask.goals.length < 1 ? (
           <Button
             onPress={() => openAction("goals")}
             title="Add Goal"
           />
         ) : (
-          editingTask.goals.map((goal) => {
+          dataCtx.editingTask.goals.map((goal) => {
             // TODO open goal screen on press
             const taskGoal = dataCtx.goals.find(
               (goalData) => goalData.id === goal
             );
             return (
               <View key={taskGoal.id}>
-                <Pressable onPress={() => {}}>
+                <Pressable onPress={() => openAction("goals")}>
                   <Text>{taskGoal.title}</Text>
                 </Pressable>
                 <Button
@@ -125,7 +124,7 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
         <Text>Priority</Text>
         <SegmentedControl
           values={["High", "Medium", "Low"]}
-          selectedIndex={priorities[editingTask.priority]}
+          selectedIndex={priorities[dataCtx.editingTask.priority]}
           onChange={(event) => {
             updateInputHandler(
               "priority",
@@ -140,20 +139,20 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
           <Text>Days</Text>
           <TextInput
             onChangeText={(value) => updateDurationHandler("days", value)}
-            value={editingTask.duration.days}
+            value={dataCtx.editingTask.duration.days}
             keyboardType="numeric"
           />
           <Text>Hours</Text>
           <TextInput
             onChangeText={(value) => updateDurationHandler("hours", value)}
-            value={editingTask.duration.hours}
+            value={dataCtx.editingTask.duration.hours}
             keyboardType="numeric"
             maxLength={2}
           />
           <Text>Minutes</Text>
           <TextInput
             onChangeText={(value) => updateDurationHandler("minutes", value)}
-            value={editingTask.duration.minutes}
+            value={dataCtx.editingTask.duration.minutes}
             keyboardType="numeric"
             maxLength={2}
           />
@@ -163,7 +162,7 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
         <Text>Due Date</Text>
         <DateTimePicker
           testID="datePicker"
-          value={editingTask.date}
+          value={dataCtx.editingTask.date}
           mode="date"
           is24Hour={true}
           display="default"
@@ -172,7 +171,7 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
           positiveButtonLabel="OK!"
         />
         <DateTimePicker
-          value={editingTask.date}
+          value={dataCtx.editingTask.date}
           mode="time"
           is24Hour={true}
           display="default"
@@ -183,7 +182,7 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
       <View>
         <TextInput
           onChangeText={(value) => updateInputHandler("description", value)}
-          value={editingTask.description}
+          value={dataCtx.editingTask.description}
         />
       </View>
       <View>
@@ -196,7 +195,7 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
           onPress={cancelHandler}
         />
       </View>
-      {editingTask.id && (
+      {dataCtx.editingTask.id && (
         <View>
           <Button
             title="Delete Task"
