@@ -44,6 +44,8 @@ function TaskDetail({ route, navigation }) {
     dataCtx.deleteTask(taskId);
   }
 
+  if (!Object.keys(dataCtx.editingTask).length) return null;
+
   return (
     <TaskForm
       task={task}

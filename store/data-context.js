@@ -60,13 +60,13 @@ function dataReducer(state, action) {
 
       const updatedGoals = state.goals.map((goal) => {
         if (newGoalIds.has(goal.id) && !oldGoalIds.has(goal.id)) {
-          return { ...goal, tasks: [...(goal.tasks || []), id] };
+          return { ...goal, tasks: [...(goal.tasks || []), goal.id] };
         }
 
         if (!newGoalIds.has(goal.id) && oldGoalIds.has(goal.id)) {
           return {
             ...goal,
-            tasks: (goal.tasks || []).filter((taskId) => taskId !== id),
+            tasks: (goal.tasks || []).filter((goalId) => goalId !== goal.id),
           };
         }
 

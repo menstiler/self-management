@@ -1,4 +1,4 @@
-import { useState, useEffect, createRef, useContext } from "react";
+import { useContext } from "react";
 import { TextInput, View, Text, Button, Pressable } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
@@ -6,17 +6,9 @@ import { useNavigation } from "@react-navigation/native";
 import { capitalizeWords } from "../util/task";
 import { DataContext } from "../store/data-context.js";
 
-export const updateFormRef = createRef();
-export const updateGoalRef = createRef();
-
 function TaskForm({ task, onSave, onCancel, onDelete }) {
   const dataCtx = useContext(DataContext);
   const navigation = useNavigation();
-
-  useEffect(() => {
-    updateFormRef.current = updateInputHandler;
-    updateGoalRef.current = updateGoalHandler;
-  }, []);
 
   function updateInputHandler(input, value) {
     dataCtx.updateEditingTask({ ...dataCtx.editingTask, [input]: value });
@@ -44,9 +36,6 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
 
   function saveHandler() {
     onSave();
-    if (!dataCtx.editingTask.id) {
-      dataCtx.updateEditingTask(task);
-    }
   }
 
   function cancelHandler() {
@@ -66,15 +55,12 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
   }
 
   function updateGoalHandler(goalId) {
-    const updatedGoalIndex = dataCtx.editingTask.goals.findIndex(
-      (goal) => goal === goalId
-    );
-    const addingGoal = updatedGoalIndex === -1;
     dataCtx.updateEditingTask({
-      ...currTask,
-      goals: addingGoal
-        ? [...dataCtx.editingTask.goals, goalId]
-        : dataCtx.editingTask.goals.filter((goal) => goal !== goalId),
+      ...dataCtx.editingTask,
+      goals:
+        dataCtx.editingTask.goals.findIndex((goal) => goal === goalId) !== -1
+          ? dataCtx.editingTask.goals.filter((goal) => goal !== goalId)
+          : [...dataCtx.editingTask.goals, goalId],
     });
   }
 

@@ -8,11 +8,6 @@ import {
   TextInput,
   Button,
 } from "react-native";
-import {
-  updateFormRef,
-  updateGoalRef,
-  getEditingTaskRef,
-} from "../components/TaskForm";
 import { capitalizeWords } from "../util/task";
 import { useContext } from "react";
 import { DataContext } from "../store/data-context";
@@ -25,7 +20,10 @@ function Action({ navigation, route }) {
     const statuses = ["not started", "in progress", "done"];
 
     function updateStatusHandler(status) {
-      updateFormRef.current?.("status", status);
+      dataCtx.updateEditingTask({
+        ...dataCtx.editingTask,
+        status,
+      });
       navigation.goBack();
     }
 
@@ -47,24 +45,20 @@ function Action({ navigation, route }) {
 
   function Goals() {
     const [searchedGoal, setSearchedGoal] = useState("");
-    const [addedGoals, setAddedGoals] = useState([]);
-    const [editingTask, setEditingTask] = useState(
-      getEditingTaskRef.current?.()
-    );
-
-    useEffect(() => {
-      const task = getEditingTaskRef.current?.();
-      setEditingTask(task);
-    }, [getEditingTaskRef]);
 
     function addGoalHandler(goalId) {
-      const task = getEditingTaskRef.current?.();
-      if (task.goals.includes(goalId)) return;
-      updateGoalRef.current?.(goalId);
+      if (dataCtx.editingTask.goals.includes(goalId)) return;
+      dataCtx.updateEditingTask({
+        ...dataCtx.editingTask,
+        goals: [...dataCtx.editingTask.goals, goalId],
+      });
     }
 
     function removeGoalHandler(goalId) {
-      updateGoalRef.current?.(goalId);
+      dataCtx.updateEditingTask({
+        ...dataCtx.editingTask,
+        goals: dataCtx.editingTask.goals.filter((goal) => goal !== goalId),
+      });
     }
 
     function onChangeHandler(text) {
@@ -85,12 +79,13 @@ function Action({ navigation, route }) {
               <Text>{capitalizeWords(goal.title)}</Text>
             </View>
           </Pressable>
-          {editingTask.goals.includes(goal.id) && (
-            <Button
-              title="Remove Goal"
-              onPress={() => removeGoalHandler(goal.id)}
-            />
-          )}
+          {dataCtx.editingTask &&
+            dataCtx.editingTask.goals.includes(goal.id) && (
+              <Button
+                title="Remove Goal"
+                onPress={() => removeGoalHandler(goal.id)}
+              />
+            )}
         </View>
       );
     }
