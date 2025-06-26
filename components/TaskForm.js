@@ -50,7 +50,7 @@ function TaskForm({ task, onSave, onCancel, onDelete }) {
   }
 
   function deleteHandler() {
-    onDelete(editingTask.id);
+    onDelete(dataCtx.editingTask.id);
     navigation.goBack();
   }
 

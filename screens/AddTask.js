@@ -18,8 +18,11 @@ function AddTask({ navigation }) {
   const dataCtx = useContext(DataContext);
   const [task, setTask] = useState(initialTaskState);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     dataCtx.updateEditingTask(initialTaskState);
+  }, []);
+
+  useLayoutEffect(() => {
     navigation.setOptions({
       title: "New Task",
     });
@@ -34,13 +37,13 @@ function AddTask({ navigation }) {
 
   function saveHandler() {
     dataCtx.addTask(dataCtx.editingTask);
-    dataCtx.updateEditingTask({});
+    dataCtx.updateEditingTask(initialTaskState);
     navigation.goBack();
   }
 
   function cancelHandler() {
     navigation.goBack();
-    dataCtx.updateEditingTask({});
+    dataCtx.updateEditingTask(initialTaskState);
   }
 
   if (!Object.keys(dataCtx.editingTask).length) return null;

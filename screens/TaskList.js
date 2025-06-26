@@ -4,6 +4,7 @@ import { DataContext } from "../store/data-context.js";
 import { GOALS, TASKS } from "../data.js";
 import FilteredTasks from "../components/FilteredTasks.js";
 import AllTasks from "../components/AllTasks.js";
+import { getHasFetched, setHasFetched } from "../store/fetchGuard.js";
 
 function TaskList({ route }) {
   const [loading, setLoading] = useState(true);
@@ -20,8 +21,13 @@ function TaskList({ route }) {
       }
       setLoading(false);
     }
-    loadData();
-  }, []);
+    if (!getHasFetched()) {
+      loadData();
+      setHasFetched(true);
+    } else {
+      setLoading(false);
+    }
+  }, [getHasFetched, setHasFetched]);
 
   if (loading) {
     return (

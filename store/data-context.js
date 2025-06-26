@@ -32,7 +32,7 @@ function dataReducer(state, action) {
     case "ADD_TASK":
       // TODO use id from db
       const taskId = Math.random();
-      const task = new Task({ taskId, ...action.payload });
+      const task = new Task({ id: taskId, ...action.payload });
 
       const updatedGoalsWithNewTask = state.goals.map((goal) =>
         task.goals && task.goals.includes(goal.id)
