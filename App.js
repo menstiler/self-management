@@ -1,6 +1,7 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import TaskList from "./screens/TaskList";
+import GoalList from "./screens/GoalList";
 import TaskDetail from "./screens/TaskDetail";
 import AddTask from "./screens/AddTask";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -14,17 +15,17 @@ function TaskOverview() {
   return (
     <BottomTabs.Navigator>
       <BottomTabs.Screen
-        name="FilteredTasks"
-        component={TaskList}
+        name="GoalList"
+        component={GoalList}
         options={{
-          title: "Today's Tasks",
+          title: "Goals",
         }}
       />
       <BottomTabs.Screen
         name="TaskList"
         component={TaskList}
         options={{
-          title: "All Tasks",
+          title: "Tasks",
         }}
       />
       <BottomTabs.Screen
