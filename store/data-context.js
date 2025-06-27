@@ -17,6 +17,7 @@ export const DataContext = createContext({
   deleteGoal: (id) => {},
   updateGoal: (id, { title, description, deadline, progress, tasks }) => {},
   editingTask: {},
+  editingGoal: {},
   updateEditingTask: ({
     title,
     date,
@@ -25,6 +26,7 @@ export const DataContext = createContext({
     description,
     goals,
   }) => {},
+  updateEditingTask: ({ title, deadline, progress, description, tasks }) => {},
 });
 
 function dataReducer(state, action) {
@@ -60,13 +62,15 @@ function dataReducer(state, action) {
 
       const updatedGoals = state.goals.map((goal) => {
         if (newGoalIds.has(goal.id) && !oldGoalIds.has(goal.id)) {
-          return { ...goal, tasks: [...(goal.tasks || []), goal.id] };
+          return { ...goal, tasks: [...(goal.tasks || []), updatableTask.id] };
         }
 
         if (!newGoalIds.has(goal.id) && oldGoalIds.has(goal.id)) {
           return {
             ...goal,
-            tasks: (goal.tasks || []).filter((goalId) => goalId !== goal.id),
+            tasks: (goal.tasks || []).filter(
+              (taskId) => taskId !== updatableTask.id
+            ),
           };
         }
 
@@ -93,11 +97,32 @@ function dataReducer(state, action) {
       const updatableGoalIndex = state.goals.findIndex(
         (goal) => goal.id === action.payload.id
       );
-      const updatableGoal = state[updatableGoalIndex];
+      const updatableGoal = state.goals[updatableGoalIndex];
       const updatedGoalItem = { ...updatableGoal, ...action.payload.data };
+
+      const oldTaskIds = new Set(updatableGoal.tasks || []);
+      const newTaskIds = new Set(updatedGoalItem.tasks || []);
+
+      const updatedTasks = state.tasks.map((task) => {
+        if (newTaskIds.has(task.id) && !oldTaskIds.has(task.id)) {
+          return { ...task, goals: [...(task.goals || []), updatableGoal.id] };
+        }
+
+        if (!newTaskIds.has(task.id) && oldTaskIds.has(task.id)) {
+          return {
+            ...task,
+            goals: (task.goals || []).filter(
+              (goalId) => goalId !== updatableGoal.id
+            ),
+          };
+        }
+
+        return task;
+      });
+
       const updatableGoals = [...state.goals];
       updatableGoals[updatableGoalIndex] = updatedGoalItem;
-      return { ...state, goals: updatableGoals };
+      return { ...state, goals: updatableGoals, tasks: updatedTasks };
     case "DELETE_GOAL":
       const updatedGoalsAfterDelete = state.goals.filter(
         (goal) => goal.id !== action.payload
@@ -105,6 +130,8 @@ function dataReducer(state, action) {
       return { ...state, goals: updatedGoalsAfterDelete };
     case "UPDATE_EDITING_TASK":
       return { ...state, editingTask: action.payload };
+    case "UPDATE_EDITING_GOAL":
+      return { ...state, editingGoal: action.payload };
     default:
       return state;
   }
@@ -115,6 +142,7 @@ function DataContextProvider({ children }) {
     tasks: [],
     goals: [],
     editingTask: {},
+    editingGoal: {},
   });
 
   function addTask(taskData) {
@@ -156,6 +184,13 @@ function DataContextProvider({ children }) {
     });
   }
 
+  function updateEditingGoal(editingGoalData) {
+    dispatch({
+      type: "UPDATE_EDITING_GOAL",
+      payload: editingGoalData,
+    });
+  }
+
   const value = {
     tasks: state.tasks,
     addTask,
@@ -168,7 +203,9 @@ function DataContextProvider({ children }) {
     deleteGoal,
     updateGoal,
     editingTask: state.editingTask,
+    editingGoal: state.editingGoal,
     updateEditingTask,
+    updateEditingGoal,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

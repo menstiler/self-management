@@ -43,47 +43,51 @@ function Action({ navigation, route }) {
     );
   }
 
-  function Goals() {
-    const [searchedGoal, setSearchedGoal] = useState("");
+  function AddRelationship({ data, editingObj, updateEditingObj }) {
+    const [searchedItem, setSearchedItem] = useState("");
 
-    function addGoalHandler(goalId) {
-      if (dataCtx.editingTask.goals.includes(goalId)) return;
-      dataCtx.updateEditingTask({
-        ...dataCtx.editingTask,
-        goals: [...dataCtx.editingTask.goals, goalId],
+    function addItemHandler(itemId) {
+      const currentArr = dataCtx[editingObj][data] || [];
+      if (currentArr.includes(itemId)) return;
+
+      dataCtx[updateEditingObj]({
+        ...dataCtx[editingObj],
+        [data]: [...currentArr, itemId],
       });
     }
 
-    function removeGoalHandler(goalId) {
-      dataCtx.updateEditingTask({
-        ...dataCtx.editingTask,
-        goals: dataCtx.editingTask.goals.filter((goal) => goal !== goalId),
+    function removeItemHandler(itemId) {
+      const currentArr = dataCtx[editingObj][data] || [];
+
+      dataCtx[updateEditingObj]({
+        ...dataCtx[editingObj],
+        [data]: currentArr.filter((item) => item !== itemId),
       });
     }
 
     function onChangeHandler(text) {
-      setSearchedGoal(text);
+      setSearchedItem(text);
     }
 
-    // TODO add new goal
-    function addNewGoalHandler() {}
+    // TODO add new item
+    function addNewItemHandler() {}
 
-    function GoalItem({ goal }) {
+    function Item({ item }) {
       return (
         <View>
           <Pressable
-            key={goal.id}
-            onPress={() => addGoalHandler(goal.id)}
+            key={item.id}
+            onPress={() => addItemHandler(item.id)}
           >
             <View>
-              <Text>{capitalizeWords(goal.title)}</Text>
+              <Text>{capitalizeWords(item.title)}</Text>
             </View>
           </Pressable>
-          {dataCtx.editingTask &&
-            dataCtx.editingTask.goals.includes(goal.id) && (
+          {dataCtx[editingObj] &&
+            dataCtx[editingObj][data].includes(item.id) && (
               <Button
-                title="Remove Goal"
-                onPress={() => removeGoalHandler(goal.id)}
+                title={`Remove ${capitalizeWords(data)}`}
+                onPress={() => removeItemHandler(item.id)}
               />
             )}
         </View>
@@ -94,32 +98,32 @@ function Action({ navigation, route }) {
       <View>
         <View>
           <TextInput
-            placeholder="Search or create new Goal"
-            value={searchedGoal}
+            placeholder={`Search or create new ${capitalizeWords(data)}`}
+            value={searchedItem}
             onChangeText={onChangeHandler}
           />
         </View>
-        {searchedGoal && (
+        {searchedItem && (
           <Button
-            title="Create New Goal"
-            onPress={addGoalHandler}
+            title={`Create New ${capitalizeWords(data)}`}
+            onPress={addItemHandler}
           />
         )}
         <ScrollView>
-          {dataCtx.goals
-            .filter((goal) => {
-              if (searchedGoal) {
-                return goal.title
+          {dataCtx[data]
+            .filter((item) => {
+              if (searchedItem) {
+                return item.title
                   .toLowerCase()
-                  .includes(searchedGoal.toLowerCase());
+                  .includes(searchedItem.toLowerCase());
               } else {
-                return goal;
+                return item;
               }
             })
-            .map((goal) => (
-              <GoalItem
-                key={goal.id}
-                goal={goal}
+            .map((item) => (
+              <Item
+                key={item.id}
+                item={item}
               />
             ))}
         </ScrollView>
@@ -131,7 +135,21 @@ function Action({ navigation, route }) {
     case "status":
       return <Status />;
     case "goals":
-      return <Goals />;
+      return (
+        <AddRelationship
+          data="goals"
+          editingObj="editingTask"
+          updateEditingObj="updateEditingTask"
+        />
+      );
+    case "tasks":
+      return (
+        <AddRelationship
+          data="tasks"
+          editingObj="editingGoal"
+          updateEditingObj="updateEditingGoal"
+        />
+      );
     default:
       return (
         <View>
