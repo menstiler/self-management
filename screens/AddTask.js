@@ -1,5 +1,5 @@
 import { useContext, useEffect, useLayoutEffect, useState } from "react";
-import TaskForm from "../components/TaskForm";
+import DataForm from "../components/DataForm";
 import { DataContext } from "../store/data-context";
 import { useIsFocused } from "@react-navigation/native";
 
@@ -16,7 +16,7 @@ const initialTaskState = {
 function AddTask({ navigation }) {
   const isFocused = useIsFocused();
   const dataCtx = useContext(DataContext);
-  const [task, setTask] = useState(initialTaskState);
+  const [task, _] = useState(initialTaskState);
 
   useEffect(() => {
     dataCtx.updateEditingTask(initialTaskState);
@@ -49,8 +49,12 @@ function AddTask({ navigation }) {
   if (!Object.keys(dataCtx.editingTask).length) return null;
 
   return (
-    <TaskForm
-      task={task}
+    <DataForm
+      data="task"
+      item={task}
+      hasManyRelationship="goals"
+      editingObj="editingTask"
+      updateEditingObj="updateEditingTask"
       onSave={saveHandler}
       onCancel={cancelHandler}
       onDelete={() => {}}

@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { FlatList } from "react-native";
-import GoalItem from "./GoalItem";
+import DataItem from "./DataItem.js";
 import { DataContext } from "../store/data-context.js";
 
 function AllGoals() {
@@ -10,7 +10,7 @@ function AllGoals() {
     <FlatList
       data={goals}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <GoalItem goal={item} />}
+      renderItem={({ item }) => <DataItem data={item} />}
     />
   );
 }

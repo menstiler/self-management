@@ -86,7 +86,7 @@ function Action({ navigation, route }) {
           {dataCtx[editingObj] &&
             dataCtx[editingObj][data].includes(item.id) && (
               <Button
-                title={`Remove ${capitalizeWords(data)}`}
+                title={`Remove ${capitalizeWords(data.slice(0, -1))}`}
                 onPress={() => removeItemHandler(item.id)}
               />
             )}

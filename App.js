@@ -2,8 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import TaskList from "./screens/TaskList";
 import GoalList from "./screens/GoalList";
-import TaskDetail from "./screens/TaskDetail";
-import GoalDetail from "./screens/GoalDetail";
+import DataDetail from "./screens/DataDetail";
 import AddTask from "./screens/AddTask";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import DataContextProvider from "./store/data-context";
@@ -56,14 +55,36 @@ export default function App() {
               title: "All Tasks",
             }}
           />
-          <Stack.Screen
-            name="TaskDetail"
-            component={TaskDetail}
-          />
-          <Stack.Screen
-            name="GoalDetail"
-            component={GoalDetail}
-          />
+          <Stack.Screen name="TaskDetail">
+            {({ route, navigation }) => (
+              <DataDetail
+                data="task"
+                editingObj="editingTask"
+                updateEditingObj="updateEditingTask"
+                hasManyRelationship="goals"
+                deleteObj="deleteTask"
+                updateObj="updateTask"
+                routeId="taskId"
+                route={route}
+                navigation={navigation}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="GoalDetail">
+            {({ route, navigation }) => (
+              <DataDetail
+                data="goal"
+                editingObj="editingGoal"
+                updateEditingObj="updateEditingGoal"
+                hasManyRelationship="tasks"
+                deleteObj="deleteGoal"
+                updateObj="updateGoal"
+                routeId="goalId"
+                route={route}
+                navigation={navigation}
+              />
+            )}
+          </Stack.Screen>
           <Stack.Screen
             name="Action"
             component={Action}

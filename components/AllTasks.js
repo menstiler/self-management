@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
-import { FlatList, Button, View } from "react-native";
-import TaskItem from "./TaskItem";
+import { FlatList, View } from "react-native";
+import DataItem from "./DataItem";
 import { DataContext } from "../store/data-context.js";
 import {
   sortTasksByTime,
@@ -47,7 +47,7 @@ function AllTasks() {
       <FlatList
         data={sortedTasks}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TaskItem task={item} />}
+        renderItem={({ item }) => <DataItem data={item} />}
       />
     </>
   );
