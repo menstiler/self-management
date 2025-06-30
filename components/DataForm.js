@@ -28,7 +28,7 @@ function DataForm({
   function updateDateHandler(_, date) {
     dataCtx[updateEditingObj]({
       ...dataCtx[editingObj],
-      date,
+      [data === "task" ? "date" : "deadline"]: date,
     });
   }
 
