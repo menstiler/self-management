@@ -75,6 +75,7 @@ function DataForm({
         dataCtx={dataCtx}
         editingObj={editingObj}
         updateEditingObj={updateEditingObj}
+        openAction={openAction}
       />
       {data === "task" && (
         <>

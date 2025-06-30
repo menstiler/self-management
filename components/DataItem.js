@@ -1,7 +1,7 @@
 import { Pressable, View, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-function DataItem({ data }) {
+function DataItem({ data, item }) {
   const navigation = useNavigation();
 
   function selectItemHandler(id) {
@@ -13,9 +13,9 @@ function DataItem({ data }) {
   }
 
   return (
-    <Pressable onPress={() => selectItemHandler(data.id)}>
+    <Pressable onPress={() => selectItemHandler(item.id)}>
       <View>
-        <Text>{data.title}</Text>
+        <Text>{item.title}</Text>
       </View>
     </Pressable>
   );

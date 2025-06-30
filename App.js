@@ -1,7 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import TaskList from "./screens/TaskList";
-import GoalList from "./screens/GoalList";
+import DataList from "./screens/DataList";
 import DataDetail from "./screens/DataDetail";
 import AddTask from "./screens/AddTask";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -18,16 +17,22 @@ function TaskOverview() {
       <BottomTabs.Navigator>
         <BottomTabs.Screen
           name="GoalList"
-          component={GoalList}
+          component={DataList}
           options={{
             title: "Goals",
+          }}
+          initialParams={{
+            data: "goals",
           }}
         />
         <BottomTabs.Screen
           name="TaskList"
-          component={TaskList}
+          component={DataList}
           options={{
             title: "Tasks",
+          }}
+          initialParams={{
+            data: "tasks",
           }}
         />
         <BottomTabs.Screen

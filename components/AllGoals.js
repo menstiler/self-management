@@ -10,7 +10,12 @@ function AllGoals() {
     <FlatList
       data={goals}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <DataItem data={item} />}
+      renderItem={({ item }) => (
+        <DataItem
+          item={item}
+          data="goal"
+        />
+      )}
     />
   );
 }

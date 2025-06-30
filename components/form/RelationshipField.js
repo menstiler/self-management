@@ -6,6 +6,7 @@ function RelationshipField({
   editingObj,
   updateEditingObj,
   hasManyRelationship,
+  openAction,
 }) {
   function updateRelationshipHandler(itemId) {
     dataCtx[updateEditingObj]({
@@ -37,7 +38,7 @@ function RelationshipField({
           );
           return (
             <View key={relationshipItem.id}>
-              <Pressable onPress={() => openAction("tasks")}>
+              <Pressable onPress={() => openAction(hasManyRelationship)}>
                 <Text>{relationshipItem.title}</Text>
               </Pressable>
               <Button

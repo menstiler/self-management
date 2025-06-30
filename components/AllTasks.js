@@ -47,7 +47,12 @@ function AllTasks() {
       <FlatList
         data={sortedTasks}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <DataItem data={item} />}
+        renderItem={({ item }) => (
+          <DataItem
+            data="task"
+            item={item}
+          />
+        )}
       />
     </>
   );
