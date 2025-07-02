@@ -62,14 +62,16 @@ function DataForm({
           value={dataCtx[editingObj].title}
         />
       </View>
-      {data === "task" && (
-        <View>
-          <Text>Status</Text>
-          <Pressable onPress={() => openAction("status")}>
-            <Text>{capitalizeWords(dataCtx[editingObj].status)}</Text>
-          </Pressable>
-        </View>
-      )}
+      <View>
+        <Text>Status</Text>
+        <Pressable
+          onPress={() =>
+            openAction(data === "task" ? "task-status" : "goal-status")
+          }
+        >
+          <Text>{capitalizeWords(dataCtx[editingObj].status)}</Text>
+        </Pressable>
+      </View>
       <RelationshipField
         hasManyRelationship={hasManyRelationship}
         dataCtx={dataCtx}

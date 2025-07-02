@@ -16,12 +16,12 @@ function Action({ navigation, route }) {
   const dataCtx = useContext(DataContext);
   const action = route.params?.action;
 
-  function Status() {
+  function Status({ editingObj, updateEditingObj }) {
     const statuses = ["not started", "in progress", "done"];
 
     function updateStatusHandler(status) {
-      dataCtx.updateEditingTask({
-        ...dataCtx.editingTask,
+      dataCtx[updateEditingObj]({
+        ...dataCtx[editingObj],
         status,
       });
       navigation.goBack();
@@ -132,8 +132,20 @@ function Action({ navigation, route }) {
   }
 
   switch (action) {
-    case "status":
-      return <Status />;
+    case "task-status":
+      return (
+        <Status
+          editingObj="editingTask"
+          updateEditingObj="updateEditingTask"
+        />
+      );
+    case "goal-status":
+      return (
+        <Status
+          editingObj="editingGoal"
+          updateEditingObj="updateEditingGoal"
+        />
+      );
     case "goals":
       return (
         <AddRelationship

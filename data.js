@@ -38,6 +38,7 @@ export const GOALS = [
     description: "Implement time blocking for deep work",
     deadline: new Date(2025, 5, 30),
     progress: 0,
+    status: "not started",
     tasks: ["1", "2", "3"],
   },
   {
@@ -46,6 +47,7 @@ export const GOALS = [
     description: "Complete the React Native course",
     deadline: new Date(2025, 6, 15),
     progress: 0,
+    status: "not started",
     tasks: [],
   },
   {
@@ -54,6 +56,7 @@ export const GOALS = [
     description: "Set boundaries for work hours",
     deadline: new Date(2025, 6, 30),
     progress: 0,
+    status: "not started",
     tasks: [],
   },
 ];

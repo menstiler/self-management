@@ -15,7 +15,10 @@ export const DataContext = createContext({
   addGoal: ({ id, title, description, deadline, progress, tasks }) => {},
   setGoals: (goals) => {},
   deleteGoal: (id) => {},
-  updateGoal: (id, { title, description, deadline, progress, tasks }) => {},
+  updateGoal: (
+    id,
+    { title, description, deadline, status, progress, tasks }
+  ) => {},
   editingTask: {},
   editingGoal: {},
   updateEditingTask: ({
@@ -24,9 +27,17 @@ export const DataContext = createContext({
     duration,
     priority,
     description,
+    status,
     goals,
   }) => {},
-  updateEditingTask: ({ title, deadline, progress, description, tasks }) => {},
+  updateEditingGoal: ({
+    title,
+    deadline,
+    progress,
+    description,
+    status,
+    tasks,
+  }) => {},
 });
 
 function dataReducer(state, action) {
