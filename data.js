@@ -16,7 +16,7 @@ export const TASKS = [
     priority: "medium",
     description: "make sure to read the article",
     date: new Date(2025, 5, 22, 2),
-    status: "completed",
+    status: "done",
     goals: ["1"],
   },
   {
@@ -39,6 +39,7 @@ export const GOALS = [
     deadline: new Date(2025, 5, 30),
     progress: 0,
     status: "not started",
+    trackTaskStatus: true,
     tasks: ["1", "2", "3"],
   },
   {
@@ -48,6 +49,7 @@ export const GOALS = [
     deadline: new Date(2025, 6, 15),
     progress: 0,
     status: "not started",
+    trackTaskStatus: true,
     tasks: [],
   },
   {
@@ -57,6 +59,7 @@ export const GOALS = [
     deadline: new Date(2025, 6, 30),
     progress: 0,
     status: "not started",
+    trackTaskStatus: true,
     tasks: [],
   },
 ];

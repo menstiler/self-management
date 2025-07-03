@@ -1,5 +1,14 @@
 export default class Goal {
-  constructor({ id, title, description, deadline, progress, status, tasks }) {
+  constructor({
+    id,
+    title,
+    description,
+    deadline,
+    progress,
+    status,
+    tasks,
+    trackTaskStatus,
+  }) {
     this.id = id;
     this.title = title;
     this.description = description;
@@ -7,5 +16,6 @@ export default class Goal {
     this.progress = progress;
     this.status = status;
     this.tasks = tasks;
+    this.trackTaskStatus = trackTaskStatus;
   }
 }

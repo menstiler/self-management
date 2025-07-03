@@ -12,12 +12,20 @@ export const DataContext = createContext({
     { title, date, duration, priority, description, goals }
   ) => {},
   goals: [],
-  addGoal: ({ id, title, description, deadline, progress, tasks }) => {},
+  addGoal: ({
+    id,
+    title,
+    description,
+    deadline,
+    progress,
+    tasks,
+    trackTaskStatus,
+  }) => {},
   setGoals: (goals) => {},
   deleteGoal: (id) => {},
   updateGoal: (
     id,
-    { title, description, deadline, status, progress, tasks }
+    { title, description, deadline, status, progress, tasks, trackTaskStatus }
   ) => {},
   editingTask: {},
   editingGoal: {},
@@ -28,6 +36,7 @@ export const DataContext = createContext({
     priority,
     description,
     status,
+    trackTaskStatus,
     goals,
   }) => {},
   updateEditingGoal: ({
@@ -37,6 +46,7 @@ export const DataContext = createContext({
     description,
     status,
     tasks,
+    trackTaskStatus,
   }) => {},
 });
 
@@ -73,7 +83,10 @@ function dataReducer(state, action) {
 
       const updatedGoals = state.goals.map((goal) => {
         if (newGoalIds.has(goal.id) && !oldGoalIds.has(goal.id)) {
-          return { ...goal, tasks: [...(goal.tasks || []), updatableTask.id] };
+          return {
+            ...goal,
+            tasks: [...(goal.tasks || []), updatableTask.id],
+          };
         }
 
         if (!newGoalIds.has(goal.id) && oldGoalIds.has(goal.id)) {

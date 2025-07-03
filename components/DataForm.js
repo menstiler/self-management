@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useEffect, useContext } from "react";
 import { TextInput, View, Text, Button, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { DataContext } from "../store/data-context.js";
@@ -7,6 +7,7 @@ import DateField from "./form/DateField";
 import PriorityField from "./form/PriorityField";
 import DurationField from "./form/DurationField";
 import RelationshipField from "./form/RelationshipField";
+import Checkbox from "expo-checkbox";
 
 function DataForm({
   data,
@@ -52,6 +53,40 @@ function DataForm({
     navigation.goBack();
   }
 
+  useEffect(() => {
+    if (data === "goal") {
+      if (dataCtx[editingObj].trackTaskStatus) {
+        const allTasks = dataCtx.tasks || [];
+
+        const goalTasks = allTasks.filter((task) =>
+          (dataCtx[editingObj].tasks || []).includes(task.id)
+        );
+
+        const anyTaskInProgressOrDone = goalTasks.some(
+          (task) => task.status === "in progress" || task.status === "done"
+        );
+
+        const allTasksComplete =
+          goalTasks.length > 0 &&
+          goalTasks.every((task) => task.status === "done");
+
+        let goalStatus = "";
+        if (allTasksComplete) {
+          goalStatus = "done";
+        } else if (anyTaskInProgressOrDone) {
+          goalStatus = "in progress";
+        } else {
+          goalStatus = "not started";
+        }
+
+        dataCtx[updateEditingObj]({
+          ...dataCtx[editingObj],
+          status: goalStatus,
+        });
+      }
+    }
+  }, []);
+
   // TODO add progress for goals
   return (
     <View>
@@ -63,14 +98,28 @@ function DataForm({
         />
       </View>
       <View>
-        <Text>Status</Text>
-        <Pressable
-          onPress={() =>
-            openAction(data === "task" ? "task-status" : "goal-status")
-          }
-        >
-          <Text>{capitalizeWords(dataCtx[editingObj].status)}</Text>
-        </Pressable>
+        <View>
+          <Text>Status</Text>
+          <Pressable
+            onPress={() => {
+              if (data === "goal" && dataCtx[editingObj].trackTaskStatus)
+                return;
+              openAction(data === "task" ? "task-status" : "goal-status");
+            }}
+          >
+            <Text>{capitalizeWords(dataCtx[editingObj].status)}</Text>
+          </Pressable>
+        </View>
+        {data === "goal" && (
+          <View>
+            <Checkbox
+              value={dataCtx[editingObj].trackTaskStatus}
+              onValueChange={(value) =>
+                updateInputHandler("trackTaskStatus", value)
+              }
+            />
+          </View>
+        )}
       </View>
       <RelationshipField
         hasManyRelationship={hasManyRelationship}

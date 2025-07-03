@@ -7,6 +7,7 @@ function DataItem({ data, item }) {
   function selectItemHandler(id) {
     const screen = data === "goal" ? "GoalDetail" : "TaskDetail";
     const screenId = data === "goal" ? "goalId" : "taskId";
+
     navigation.navigate(screen, {
       [screenId]: id,
     });
