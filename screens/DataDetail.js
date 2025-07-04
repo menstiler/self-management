@@ -10,6 +10,7 @@ function DataDetail({
   hasManyRelationship,
   updateEditingObj,
   deleteObj,
+  deleteObjAndRelationships,
   updateObj,
   routeId,
   route,
@@ -57,6 +58,10 @@ function DataDetail({
     dataCtx[deleteObj](goalId);
   }
 
+  function deleteItemAndRelationships(goalId) {
+    dataCtx[deleteObjAndRelationships](goalId);
+  }
+
   if (!Object.keys(dataCtx[editingObj]).length) return null;
 
   return (
@@ -69,6 +74,7 @@ function DataDetail({
       onSave={udpateItem}
       onCancel={() => {}}
       onDelete={deleteItem}
+      onDeleteItemAndRelationships={deleteItemAndRelationships}
     />
   );
 }

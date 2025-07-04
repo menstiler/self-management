@@ -83,6 +83,7 @@ export default function App() {
                 updateEditingObj="updateEditingGoal"
                 hasManyRelationship="tasks"
                 deleteObj="deleteGoal"
+                deleteObjAndRelationships="deleteGoalWithTasks"
                 updateObj="updateGoal"
                 routeId="goalId"
                 route={route}

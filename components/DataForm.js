@@ -1,5 +1,5 @@
-import { useEffect, useContext } from "react";
-import { TextInput, View, Text, Button, Pressable } from "react-native";
+import { useEffect, useContext, useState } from "react";
+import { TextInput, View, Text, Button, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { DataContext } from "../store/data-context.js";
 import { capitalizeWords } from "../util/task.js";
@@ -7,6 +7,7 @@ import DateField from "./form/DateField";
 import PriorityField from "./form/PriorityField";
 import DurationField from "./form/DurationField";
 import RelationshipField from "./form/RelationshipField";
+import DeleteModal from "./form/DeleteModal";
 import Checkbox from "expo-checkbox";
 
 function DataForm({
@@ -18,9 +19,11 @@ function DataForm({
   onSave,
   onCancel,
   onDelete,
+  onDeleteItemAndRelationships,
 }) {
   const dataCtx = useContext(DataContext);
   const navigation = useNavigation();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   function updateInputHandler(input, value) {
     dataCtx[updateEditingObj]({ ...dataCtx[editingObj], [input]: value });
@@ -50,6 +53,11 @@ function DataForm({
 
   function deleteHandler() {
     onDelete(dataCtx[editingObj].id);
+    navigation.goBack();
+  }
+
+  function deleteGoalWithTasksHandler() {
+    onDeleteItemAndRelationships(dataCtx[editingObj].id);
     navigation.goBack();
   }
 
@@ -165,11 +173,25 @@ function DataForm({
         <View>
           <Button
             title={`Delete ${capitalizeWords(data)}`}
-            onPress={deleteHandler}
+            onPress={() => setShowDeleteModal(true)}
             color="red"
           />
         </View>
       )}
+      <DeleteModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={() => {
+          deleteHandler();
+          setShowDeleteModal(false);
+        }}
+        onDeleteWithTasks={() => {
+          deleteGoalWithTasksHandler();
+          setShowDeleteModal(false);
+        }}
+        itemTitle={dataCtx[editingObj].title}
+        itemType={data}
+      />
     </View>
   );
 }

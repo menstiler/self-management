@@ -23,6 +23,7 @@ export const DataContext = createContext({
   }) => {},
   setGoals: (goals) => {},
   deleteGoal: (id) => {},
+  deleteGoalWithTasks: (id) => {},
   updateGoal: (
     id,
     { title, description, deadline, status, progress, tasks, trackTaskStatus }
@@ -156,6 +157,9 @@ function dataReducer(state, action) {
       return { ...state, editingTask: action.payload };
     case "UPDATE_EDITING_GOAL":
       return { ...state, editingGoal: action.payload };
+    case "DELETE_GOAL_WITH_TASKS":
+      // TODO add logic for deleting goal and their associated tasks
+      return state;
     default:
       return state;
   }
@@ -215,6 +219,13 @@ function DataContextProvider({ children }) {
     });
   }
 
+  function deleteGoalWithTasks(id) {
+    dispatch({
+      type: "DELETE_GOAL_WITH_TASKS",
+      payload: id,
+    });
+  }
+
   const value = {
     tasks: state.tasks,
     addTask,
@@ -225,6 +236,7 @@ function DataContextProvider({ children }) {
     addGoal,
     setGoals,
     deleteGoal,
+    deleteGoalWithTasks,
     updateGoal,
     editingTask: state.editingTask,
     editingGoal: state.editingGoal,
