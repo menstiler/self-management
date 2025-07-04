@@ -24,6 +24,7 @@ function DataForm({
   const dataCtx = useContext(DataContext);
   const navigation = useNavigation();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [tasksToDelete, setTasksToDelete] = useState([]);
 
   function updateInputHandler(input, value) {
     dataCtx[updateEditingObj]({ ...dataCtx[editingObj], [input]: value });
@@ -69,6 +70,12 @@ function DataForm({
         const goalTasks = allTasks.filter((task) =>
           (dataCtx[editingObj].tasks || []).includes(task.id)
         );
+
+        const uniqueGoalTasks = goalTasks.filter(
+          (task) => task.goals.length === 1
+        );
+
+        setTasksToDelete(uniqueGoalTasks);
 
         const anyTaskInProgressOrDone = goalTasks.some(
           (task) => task.status === "in progress" || task.status === "done"
@@ -191,6 +198,7 @@ function DataForm({
         }}
         itemTitle={dataCtx[editingObj].title}
         itemType={data}
+        tasksToDelete={tasksToDelete}
       />
     </View>
   );

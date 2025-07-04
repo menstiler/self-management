@@ -15,6 +15,7 @@ export default function DeleteModal({
   onDeleteWithTasks,
   itemTitle,
   itemType,
+  tasksToDelete,
 }) {
   const capitalizeWords = (str) => str.replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -47,7 +48,7 @@ export default function DeleteModal({
               <Text style={styles.destructiveText}>Delete</Text>
             </TouchableOpacity>
 
-            {itemType === "goal" && (
+            {itemType === "goal" && tasksToDelete.length > 0 && (
               <TouchableOpacity
                 style={styles.destructiveBtn}
                 onPress={onDeleteWithTasks}
