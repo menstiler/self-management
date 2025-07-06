@@ -1,5 +1,5 @@
 import { useEffect, useContext, useState } from "react";
-import { TextInput, View, Text, Button, Pressable, Alert } from "react-native";
+import { TextInput, View, Text, Button, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { DataContext } from "../store/data-context.js";
 import { capitalizeWords } from "../util/task.js";
@@ -64,19 +64,19 @@ function DataForm({
 
   useEffect(() => {
     if (data === "goal") {
+      const allTasks = dataCtx.tasks || [];
+
+      const goalTasks = allTasks.filter((task) =>
+        (item.tasks || []).includes(task.id)
+      );
+
+      const uniqueGoalTasks = goalTasks.filter(
+        (task) => task.goals.length === 1
+      );
+
+      setTasksToDelete(uniqueGoalTasks);
+
       if (dataCtx[editingObj].trackTaskStatus) {
-        const allTasks = dataCtx.tasks || [];
-
-        const goalTasks = allTasks.filter((task) =>
-          (dataCtx[editingObj].tasks || []).includes(task.id)
-        );
-
-        const uniqueGoalTasks = goalTasks.filter(
-          (task) => task.goals.length === 1
-        );
-
-        setTasksToDelete(uniqueGoalTasks);
-
         const anyTaskInProgressOrDone = goalTasks.some(
           (task) => task.status === "in progress" || task.status === "done"
         );
@@ -94,13 +94,15 @@ function DataForm({
           goalStatus = "not started";
         }
 
-        dataCtx[updateEditingObj]({
-          ...dataCtx[editingObj],
-          status: goalStatus,
-        });
+        if (dataCtx[editingObj].status !== goalStatus) {
+          dataCtx[updateEditingObj]({
+            ...dataCtx[editingObj],
+            status: goalStatus,
+          });
+        }
       }
     }
-  }, []);
+  }, [data, editingObj, updateEditingObj, dataCtx]);
 
   // TODO add progress for goals
   return (

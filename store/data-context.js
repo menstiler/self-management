@@ -152,14 +152,49 @@ function dataReducer(state, action) {
       const updatedGoalsAfterDelete = state.goals.filter(
         (goal) => goal.id !== action.payload
       );
-      return { ...state, goals: updatedGoalsAfterDelete };
+
+      const updatedTasksAfterGoalDelete = state.tasks.map((task) => ({
+        ...task,
+        goals: (task.goals || []).filter((goalId) => goalId !== action.payload),
+      }));
+
+      return {
+        ...state,
+        goals: updatedGoalsAfterDelete,
+        tasks: updatedTasksAfterGoalDelete,
+      };
     case "UPDATE_EDITING_TASK":
       return { ...state, editingTask: action.payload };
     case "UPDATE_EDITING_GOAL":
       return { ...state, editingGoal: action.payload };
     case "DELETE_GOAL_WITH_TASKS":
-      // TODO add logic for deleting goal and their associated tasks
-      return state;
+      const updatedGoalsAfterDeleteWithTasks = state.goals.filter(
+        (goal) => goal.id !== action.payload
+      );
+
+      const tasksToDelete = state.tasks
+        .filter(
+          (task) =>
+            Array.isArray(task.goals) &&
+            task.goals.length === 1 &&
+            task.goals[0] === action.payload
+        )
+        .map((task) => task.id);
+
+      const updatedTasksAfterGoalDeleteWithTasks = state.tasks
+        .filter((task) => !tasksToDelete.includes(task.id))
+        .map((task) => ({
+          ...task,
+          goals: (task.goals || []).filter(
+            (goalId) => goalId !== action.payload
+          ),
+        }));
+
+      return {
+        ...state,
+        goals: updatedGoalsAfterDeleteWithTasks,
+        tasks: updatedTasksAfterGoalDeleteWithTasks,
+      };
     default:
       return state;
   }
