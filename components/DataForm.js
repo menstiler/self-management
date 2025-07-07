@@ -9,6 +9,7 @@ import DurationField from "./form/DurationField";
 import RelationshipField from "./form/RelationshipField";
 import DeleteModal from "./form/DeleteModal";
 import Checkbox from "expo-checkbox";
+import * as Progress from "react-native-progress";
 
 function DataForm({
   data,
@@ -62,6 +63,12 @@ function DataForm({
     navigation.goBack();
   }
 
+  function calculateGoalProgress(goalTasks) {
+    if (goalTasks.length === 0) return 0;
+    const completed = goalTasks.filter((task) => task.status === "done").length;
+    return completed / goalTasks.length;
+  }
+
   useEffect(() => {
     if (data === "goal") {
       const allTasks = dataCtx.tasks || [];
@@ -75,6 +82,15 @@ function DataForm({
       );
 
       setTasksToDelete(uniqueGoalTasks);
+
+      let progress = calculateGoalProgress(goalTasks);
+
+      if (dataCtx[editingObj].progress !== progress) {
+        dataCtx[updateEditingObj]({
+          ...dataCtx[editingObj],
+          progress,
+        });
+      }
 
       if (dataCtx[editingObj].trackTaskStatus) {
         const anyTaskInProgressOrDone = goalTasks.some(
@@ -138,6 +154,21 @@ function DataForm({
           </View>
         )}
       </View>
+      {data === "goal" && (
+        <View style={{ marginVertical: 16 }}>
+          <Text>
+            Progress: {Math.round(dataCtx[editingObj].progress * 100)}%
+          </Text>
+          <Progress.Bar
+            progress={dataCtx[editingObj].progress}
+            width={null}
+            height={10}
+            color="#4caf50"
+            unfilledColor="#e0e0e0"
+            borderWidth={0}
+          />
+        </View>
+      )}
       <RelationshipField
         hasManyRelationship={hasManyRelationship}
         dataCtx={dataCtx}

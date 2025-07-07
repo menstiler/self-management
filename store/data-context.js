@@ -109,7 +109,17 @@ function dataReducer(state, action) {
       const updatedTasksAfterDelete = state.tasks.filter(
         (task) => task.id !== action.payload
       );
-      return { ...state, tasks: updatedTasksAfterDelete };
+
+      const updatedGoalsAfterTaskDelete = state.goals.map((goal) => ({
+        ...goal,
+        tasks: (goal.tasks || []).filter((taskId) => taskId !== action.payload),
+      }));
+
+      return {
+        ...state,
+        tasks: updatedTasksAfterDelete,
+        goals: updatedGoalsAfterTaskDelete,
+      };
     case "ADD_GOAL":
       // TODO use id from db
       const goalId = Math.random();
