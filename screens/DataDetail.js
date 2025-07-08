@@ -1,4 +1,10 @@
-import { useState, useEffect, useLayoutEffect, useContext } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useContext,
+  useRef,
+} from "react";
 import { View, Text } from "react-native";
 import { DataContext } from "../store/data-context.js";
 import DataForm from "../components/DataForm.js";
@@ -19,8 +25,16 @@ function DataDetail({
   const dataCtx = useContext(DataContext);
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState();
+  const dataFormRef = useRef();
 
   const dataId = route.params?.[routeId];
+
+  useEffect(() => {
+    if (route.params?.duplicate) {
+      dataFormRef.current?.duplicateTask();
+      navigation.setParams({ duplicate: undefined });
+    }
+  }, [route.params?.duplicate]);
 
   useEffect(() => {
     setLoading(true);
@@ -75,6 +89,7 @@ function DataDetail({
       onCancel={() => {}}
       onDelete={deleteItem}
       onDeleteItemAndRelationships={deleteItemAndRelationships}
+      ref={dataFormRef}
     />
   );
 }

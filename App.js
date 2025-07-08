@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import DataContextProvider from "./store/data-context";
 import Action from "./screens/Action";
 import OverviewWrapper from "./components/OverviewWrapper";
+import DropdownMenu from "./components/DropdownMenu";
 
 const Stack = createNativeStackNavigator();
 const BottomTabs = createBottomTabNavigator();
@@ -60,7 +61,18 @@ export default function App() {
               title: "All Tasks",
             }}
           />
-          <Stack.Screen name="TaskDetail">
+          <Stack.Screen
+            name="TaskDetail"
+            options={({ navigation }) => ({
+              headerRight: () => (
+                <DropdownMenu
+                  onDuplicate={() => {
+                    navigation.setParams({ duplicate: true });
+                  }}
+                />
+              ),
+            })}
+          >
             {({ route, navigation }) => (
               <DataDetail
                 data="task"
