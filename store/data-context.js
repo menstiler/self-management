@@ -255,6 +255,9 @@ function DataContextProvider({ children }) {
       type: "UPDATE_EDITING_TASK",
       payload: editingTaskData,
     });
+    if (editingTaskData.id) {
+      updateTask(editingTaskData.id, editingTaskData);
+    }
   }
 
   function updateEditingGoal(editingGoalData) {
@@ -262,6 +265,9 @@ function DataContextProvider({ children }) {
       type: "UPDATE_EDITING_GOAL",
       payload: editingGoalData,
     });
+    if (editingGoalData.id) {
+      updateGoal(editingGoalData.id, editingGoalData);
+    }
   }
 
   function deleteGoalWithTasks(id) {

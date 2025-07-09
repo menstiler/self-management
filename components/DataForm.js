@@ -16,6 +16,7 @@ import RelationshipField from "./form/RelationshipField";
 import DeleteModal from "./form/DeleteModal";
 import Checkbox from "expo-checkbox";
 import * as Progress from "react-native-progress";
+import { useGoalMeta } from "../hooks/useGoalMeta";
 
 const DataForm = forwardRef(
   (
@@ -48,6 +49,13 @@ const DataForm = forwardRef(
       });
     }
 
+    function updateDurationHandler(input, value) {
+      dataCtx.updateEditingTask({
+        ...dataCtx.editingTask,
+        duration: { ...currTask.duration, [input]: value },
+      });
+    }
+
     function saveHandler() {
       onSave();
     }
@@ -73,13 +81,7 @@ const DataForm = forwardRef(
       navigation.goBack();
     }
 
-    function calculateGoalProgress(goalTasks) {
-      if (goalTasks.length === 0) return 0;
-      const completed = goalTasks.filter(
-        (task) => task.status === "done"
-      ).length;
-      return completed / goalTasks.length;
-    }
+    const { progress, status } = useGoalMeta(dataCtx[editingObj]);
 
     useEffect(() => {
       if (data === "goal") {
@@ -95,8 +97,6 @@ const DataForm = forwardRef(
 
         setTasksToDelete(uniqueGoalTasks);
 
-        let progress = calculateGoalProgress(goalTasks);
-
         if (dataCtx[editingObj].progress !== progress) {
           dataCtx[updateEditingObj]({
             ...dataCtx[editingObj],
@@ -105,32 +105,15 @@ const DataForm = forwardRef(
         }
 
         if (dataCtx[editingObj].trackTaskStatus) {
-          const anyTaskInProgressOrDone = goalTasks.some(
-            (task) => task.status === "in progress" || task.status === "done"
-          );
-
-          const allTasksComplete =
-            goalTasks.length > 0 &&
-            goalTasks.every((task) => task.status === "done");
-
-          let goalStatus = "";
-          if (allTasksComplete) {
-            goalStatus = "done";
-          } else if (anyTaskInProgressOrDone) {
-            goalStatus = "in progress";
-          } else {
-            goalStatus = "not started";
-          }
-
-          if (dataCtx[editingObj].status !== goalStatus) {
+          if (dataCtx[editingObj].status !== status) {
             dataCtx[updateEditingObj]({
               ...dataCtx[editingObj],
-              status: goalStatus,
+              status,
             });
           }
         }
       }
-    }, [data, editingObj, updateEditingObj, dataCtx]);
+    }, [data, editingObj, updateEditingObj, dataCtx, progress, status]);
 
     function duplicateTaskHandler() {
       if (data !== "task") return;
@@ -201,11 +184,9 @@ const DataForm = forwardRef(
         </View>
         {data === "goal" && (
           <View style={{ marginVertical: 16 }}>
-            <Text>
-              Progress: {Math.round(dataCtx[editingObj].progress * 100)}%
-            </Text>
+            <Text>Progress: {Math.round(dataCtx[editingObj].progress)}%</Text>
             <Progress.Bar
-              progress={dataCtx[editingObj].progress}
+              progress={dataCtx[editingObj].progress / 100}
               width={null}
               height={10}
               color="#4caf50"
@@ -229,7 +210,7 @@ const DataForm = forwardRef(
             />
             <DurationField
               durationValue={dataCtx[editingObj].duration}
-              dataCtx={dataCtx}
+              updateDurationHandler={updateDurationHandler}
             />
           </>
         )}
@@ -244,17 +225,18 @@ const DataForm = forwardRef(
             value={dataCtx[editingObj].description}
           />
         </View>
-        <View>
-          <Button
-            title="Save"
-            onPress={saveHandler}
-          />
-          <Button
-            title="Cancel"
-            onPress={cancelHandler}
-          />
-        </View>
-        {dataCtx[editingObj].id && (
+        {!dataCtx[editingObj].id ? (
+          <View>
+            <Button
+              title="Save"
+              onPress={saveHandler}
+            />
+            <Button
+              title="Cancel"
+              onPress={cancelHandler}
+            />
+          </View>
+        ) : (
           <View>
             <Button
               title={`Delete ${capitalizeWords(data)}`}

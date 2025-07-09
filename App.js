@@ -21,6 +21,7 @@ function TaskOverview() {
           component={DataList}
           options={{
             title: "Goals",
+            headerShown: false,
           }}
           initialParams={{
             data: "goals",

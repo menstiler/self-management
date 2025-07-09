@@ -63,7 +63,7 @@ function DataDetail({
     );
   }
 
-  function udpateItem() {
+  function saveItem() {
     dataCtx[updateObj](dataId, dataCtx[editingObj]);
     setItem(dataCtx[editingObj]);
   }
@@ -85,7 +85,7 @@ function DataDetail({
       hasManyRelationship={hasManyRelationship}
       editingObj={editingObj}
       updateEditingObj={updateEditingObj}
-      onSave={udpateItem}
+      onSave={saveItem}
       onCancel={() => {}}
       onDelete={deleteItem}
       onDeleteItemAndRelationships={deleteItemAndRelationships}

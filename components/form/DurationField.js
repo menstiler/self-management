@@ -1,13 +1,6 @@
 import { View, Text, TextInput } from "react-native";
 
-function DurationField({ durationValue, dataCtx }) {
-  function updateDurationHandler(input, value) {
-    dataCtx.updateEditingTask({
-      ...dataCtx.editingTask,
-      duration: { ...currTask.duration, [input]: value },
-    });
-  }
-
+function DurationField({ durationValue, updateDurationHandler }) {
   return (
     <View>
       <Text>Duration</Text>
