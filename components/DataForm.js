@@ -5,7 +5,17 @@ import {
   useImperativeHandle,
   forwardRef,
 } from "react";
-import { TextInput, View, Text, Button, Pressable } from "react-native";
+import {
+  TextInput,
+  View,
+  Text,
+  Button,
+  Pressable,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { DataContext } from "../store/data-context.js";
 import { capitalizeWords } from "../util/task.js";
@@ -17,6 +27,7 @@ import DeleteModal from "./form/DeleteModal";
 import Checkbox from "expo-checkbox";
 import * as Progress from "react-native-progress";
 import { useGoalMeta } from "../hooks/useGoalMeta";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const DataForm = forwardRef(
   (
@@ -52,7 +63,7 @@ const DataForm = forwardRef(
     function updateDurationHandler(input, value) {
       dataCtx.updateEditingTask({
         ...dataCtx.editingTask,
-        duration: { ...currTask.duration, [input]: value },
+        duration: { ...dataCtx.editingTask.duration, [input]: value },
       });
     }
 
@@ -150,101 +161,119 @@ const DataForm = forwardRef(
     }));
 
     return (
-      <View>
-        <View>
-          <Text>Title</Text>
-          <TextInput
-            onChangeText={(value) => updateInputHandler("title", value)}
-            value={dataCtx[editingObj].title}
-          />
-        </View>
-        <View>
-          <View>
-            <Text>Status</Text>
-            <Pressable
-              onPress={() => {
-                if (data === "goal" && dataCtx[editingObj].trackTaskStatus)
-                  return;
-                openAction(data === "task" ? "task-status" : "goal-status");
-              }}
-            >
-              <Text>{capitalizeWords(dataCtx[editingObj].status)}</Text>
-            </Pressable>
-          </View>
-          {data === "goal" && (
-            <View>
-              <Checkbox
-                value={dataCtx[editingObj].trackTaskStatus}
-                onValueChange={(value) =>
-                  updateInputHandler("trackTaskStatus", value)
-                }
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.keyboardAvoiding}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+          >
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Title</Text>
+              <TextInput
+                style={styles.input}
+                onChangeText={(value) => updateInputHandler("title", value)}
+                value={dataCtx[editingObj].title}
+                placeholder="Enter title"
               />
             </View>
-          )}
-        </View>
-        {data === "goal" && (
-          <View style={{ marginVertical: 16 }}>
-            <Text>Progress: {Math.round(dataCtx[editingObj].progress)}%</Text>
-            <Progress.Bar
-              progress={dataCtx[editingObj].progress / 100}
-              width={null}
-              height={10}
-              color="#4caf50"
-              unfilledColor="#e0e0e0"
-              borderWidth={0}
+            <View style={[styles.fieldGroup, styles.row]}>
+              <View style={styles.flex}>
+                <Text style={styles.label}>Status</Text>
+                <Pressable
+                  style={styles.statusBox}
+                  onPress={() => {
+                    if (data === "goal" && dataCtx[editingObj].trackTaskStatus)
+                      return;
+                    openAction(data === "task" ? "task-status" : "goal-status");
+                  }}
+                >
+                  <Text style={styles.statusText}>
+                    {capitalizeWords(dataCtx[editingObj].status)}
+                  </Text>
+                </Pressable>
+              </View>
+
+              {data === "goal" && (
+                <View style={styles.checkboxContainer}>
+                  <Checkbox
+                    value={dataCtx[editingObj].trackTaskStatus}
+                    onValueChange={(value) =>
+                      updateInputHandler("trackTaskStatus", value)
+                    }
+                  />
+                  <Text style={styles.checkboxLabel}>Track Task Status</Text>
+                </View>
+              )}
+            </View>
+            {data === "goal" && (
+              <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>
+                  Progress: {Math.round(dataCtx[editingObj].progress)}%
+                </Text>
+                <Progress.Bar
+                  progress={dataCtx[editingObj].progress / 100}
+                  width={null}
+                  height={10}
+                  color="#4caf50"
+                  unfilledColor="#e0e0e0"
+                  borderWidth={0}
+                  borderRadius={8}
+                />
+              </View>
+            )}
+            <RelationshipField
+              hasManyRelationship={hasManyRelationship}
+              dataCtx={dataCtx}
+              editingObj={editingObj}
+              updateEditingObj={updateEditingObj}
+              openAction={openAction}
             />
-          </View>
-        )}
-        <RelationshipField
-          hasManyRelationship={hasManyRelationship}
-          dataCtx={dataCtx}
-          editingObj={editingObj}
-          updateEditingObj={updateEditingObj}
-          openAction={openAction}
-        />
-        {data === "task" && (
-          <>
-            <PriorityField
-              value={dataCtx[editingObj].priority}
-              updateInputHandler={updateInputHandler}
+            {data === "task" && (
+              <>
+                <PriorityField
+                  value={dataCtx[editingObj].priority}
+                  updateInputHandler={updateInputHandler}
+                />
+                <DurationField
+                  durationValue={dataCtx[editingObj].duration}
+                  updateDurationHandler={updateDurationHandler}
+                />
+              </>
+            )}
+            <DateField
+              data={data}
+              value={dataCtx[editingObj][data === "task" ? "date" : "deadline"]}
+              updateDateHandler={updateDateHandler}
             />
-            <DurationField
-              durationValue={dataCtx[editingObj].duration}
-              updateDurationHandler={updateDurationHandler}
-            />
-          </>
-        )}
-        <DateField
-          data={data}
-          value={dataCtx[editingObj][data === "task" ? "date" : "deadline"]}
-          updateDateHandler={updateDateHandler}
-        />
-        <View>
-          <TextInput
-            onChangeText={(value) => updateInputHandler("description", value)}
-            value={dataCtx[editingObj].description}
-          />
-        </View>
-        {!dataCtx[editingObj].id ? (
-          <View>
-            <Button
-              title="Save"
-              onPress={saveHandler}
-            />
-            <Button
-              title="Cancel"
-              onPress={cancelHandler}
-            />
-          </View>
-        ) : (
-          <View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.description]}
+                onChangeText={(value) =>
+                  updateInputHandler("description", value)
+                }
+                value={dataCtx[editingObj].description}
+                placeholder="Optional description"
+                multiline
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </ScrollView>
+
+        <View style={styles.buttonRow}>
+          {dataCtx[editingObj].id && (
             <Button
               title={`Delete ${capitalizeWords(data)}`}
               onPress={() => setShowDeleteModal(true)}
-              color="red"
+              color="#e53935"
             />
-          </View>
-        )}
+          )}
+        </View>
+
         <DeleteModal
           visible={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
@@ -266,3 +295,86 @@ const DataForm = forwardRef(
 );
 
 export default DataForm;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FAFAFA",
+  },
+  keyboardAvoiding: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 50,
+  },
+  fieldGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontWeight: "600",
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: "#f9f9f9",
+    borderColor: "#ddd",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "#111",
+  },
+  description: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  flex: {
+    flex: 1,
+  },
+  statusBox: {
+    backgroundColor: "#eee",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  statusText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 24,
+  },
+  checkboxLabel: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: "#444",
+  },
+  progressContainer: {
+    marginBottom: 20,
+  },
+  progressText: {
+    fontSize: 14,
+    marginBottom: 6,
+    color: "#666",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 26,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderColor: "#eee",
+  },
+});
