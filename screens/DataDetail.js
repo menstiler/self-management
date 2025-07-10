@@ -68,8 +68,8 @@ function DataDetail({
     setItem(dataCtx[editingObj]);
   }
 
-  function deleteItem(goalId) {
-    dataCtx[deleteObj](goalId);
+  function deleteItem(itemId) {
+    dataCtx[deleteObj](itemId);
   }
 
   function deleteItemAndRelationships(goalId) {

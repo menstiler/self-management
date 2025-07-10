@@ -1,8 +1,7 @@
 import { useContext } from "react";
 import { View, Text } from "react-native";
 import { DataContext } from "../store/data-context.js";
-import AllGoals from "../components/AllGoals.js";
-import AllTasks from "../components/AllTasks.js";
+import AllItems from "../components/AllItems.js";
 import { capitalizeWords } from "../util/task.js";
 
 function DataList({ route }) {
@@ -15,11 +14,7 @@ function DataList({ route }) {
       </View>
     );
   } else {
-    if (route.name === "GoalList") {
-      return <AllGoals />;
-    } else {
-      return <AllTasks />;
-    }
+    return <AllItems data={route.name === "GoalList" ? "goal" : "task"} />;
   }
 }
 

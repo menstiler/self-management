@@ -17,42 +17,38 @@ function DataItem({ data, item }) {
   }
 
   const { progress, status, goalTasks, completedTasks } = useGoalMeta(item);
-  console.log(progress);
+
   return (
     <Pressable onPress={() => selectItemHandler(item.id)}>
-      <View style={styles.card}>
-        <View style={styles.topRow}>
-          <View style={styles.titleWrapper}>
-            <Text style={styles.goalTitle}>{item.title}</Text>
-            <Text style={styles.goalProgressText}>
-              {capitalizeWords(status)}
-            </Text>
-            {data === "goal" && (
-              <Text>
-                {goalTasks.length > 0
-                  ? `${completedTasks} of ${goalTasks.length} completed.`
-                  : `No tasks completed`}
-              </Text>
-            )}
-          </View>
+      <View style={styles.topRow}>
+        <View style={styles.titleWrapper}>
+          <Text style={styles.goalTitle}>{item.title}</Text>
+          <Text style={styles.goalProgressText}>{capitalizeWords(status)}</Text>
           {data === "goal" && (
-            <CircularProgress
-              value={progress}
-              radius={35}
-              activeStrokeColor="#4CAF50"
-              inActiveStrokeColor="#E0E0E0"
-              inActiveStrokeWidth={8}
-              activeStrokeWidth={8}
-              progressValueColor="#333"
-              maxValue={100}
-              showProgressValue={false}
-              title={`${progress.toFixed(0)}%`}
-              titleFontSize={16}
-              titleColor="black"
-              titleStyle={{ fontWeight: "bold" }}
-            />
+            <Text>
+              {goalTasks.length > 0
+                ? `${completedTasks} of ${goalTasks.length} completed.`
+                : `No tasks completed`}
+            </Text>
           )}
         </View>
+        {data === "goal" && (
+          <CircularProgress
+            value={progress}
+            radius={35}
+            activeStrokeColor="#4CAF50"
+            inActiveStrokeColor="#E0E0E0"
+            inActiveStrokeWidth={8}
+            activeStrokeWidth={8}
+            progressValueColor="#333"
+            maxValue={100}
+            showProgressValue={false}
+            title={`${progress.toFixed(0)}%`}
+            titleFontSize={16}
+            titleColor="black"
+            titleStyle={{ fontWeight: "bold" }}
+          />
+        )}
       </View>
     </Pressable>
   );
@@ -61,16 +57,6 @@ function DataItem({ data, item }) {
 export default DataItem;
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",

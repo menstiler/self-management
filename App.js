@@ -15,13 +15,16 @@ const BottomTabs = createBottomTabNavigator();
 function TaskOverview() {
   return (
     <OverviewWrapper>
-      <BottomTabs.Navigator>
+      <BottomTabs.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
         <BottomTabs.Screen
           name="GoalList"
           component={DataList}
           options={{
             title: "Goals",
-            headerShown: false,
           }}
           initialParams={{
             data: "goals",
