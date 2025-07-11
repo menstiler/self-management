@@ -16,7 +16,15 @@ function DataItem({ data, item }) {
     });
   }
 
-  const { progress, status, goalTasks, completedTasks } = useGoalMeta(item);
+  const { progress, status, goalTasks, completedTasks } =
+    data === "goal"
+      ? useGoalMeta(item)
+      : {
+          progress: null,
+          status: item.status,
+          goalTasks: [],
+          completedTasks: null,
+        };
 
   return (
     <Pressable onPress={() => selectItemHandler(item.id)}>

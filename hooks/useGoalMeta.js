@@ -18,5 +18,10 @@ export function useGoalMeta(goal) {
     [(tasks, goalTasks)]
   );
 
-  return { progress, status, goalTasks, completedTasks };
+  const uniqueGoalTasks = useMemo(
+    () => goalTasks.filter((task) => task.goals.length === 1),
+    [(tasks, goalTasks)]
+  );
+
+  return { progress, status, goalTasks, completedTasks, uniqueGoalTasks };
 }

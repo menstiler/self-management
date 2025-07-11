@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   TouchableWithoutFeedback,
 } from "react-native";
 import DataItem from "./DataItem.js";
@@ -16,17 +15,23 @@ import {
   hasDateInPastDays,
   capitalizeWords,
 } from "../util/task.js";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { SwipeListView } from "react-native-swipe-list-view";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import TaskFilter from "./TaskFilter.js";
+import { GlobalStyles } from "../constants/styles.js";
+import DeleteModal from "./form/DeleteModal.js";
 
 function AllItems({ data }) {
   const [filterType, setFilterType] = useState(0);
+  const [itemToDelete, setItemToDelete] = useState({
+    title: "",
+    tasksToDelete: [],
+  });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [openRowKey, setOpenRowKey] = useState(null);
-  const rowMapRef = useRef({});
   const dataCtx = useContext(DataContext);
-  const navigation = useNavigation();
+  const rowMapRef = useRef({});
+  const lastSwipeDirectionRef = useRef({});
 
   useFocusEffect(
     useCallback(() => {
@@ -57,50 +62,103 @@ function AllItems({ data }) {
   const sortedData =
     data === "task" ? sortTasksByTime(filteredTaskByDay) : dataCtx.goals;
 
-  function handleDelete(itemId) {
-    const action = data === "goal" ? "deleteGoal" : "deleteTask";
-    Alert.alert(
-      `Delete ${capitalizeWords(data)}`,
-      `Are you sure you want to delete this ${data}?`,
-      [
-        {
-          text: "Cancel",
-          onPress: () => {},
-          style: "cancel",
-        },
-        {
-          text: "OK",
-          onPress: () => dataCtx[action](itemId),
-          style: "destructive",
-        },
-      ],
-      { cancelable: true }
+  function handleDelete(item) {
+    if (data === "goal") {
+      let tasksToDelete = [];
+      const goalTasks = dataCtx.tasks.filter((task) =>
+        (item.tasks || []).includes(task.id)
+      );
+      const uniqueGoalTasks = goalTasks.filter(
+        (task) => task.goals.length === 1
+      );
+
+      if (uniqueGoalTasks.length > 0) {
+        tasksToDelete = uniqueGoalTasks;
+      }
+
+      setItemToDelete({ ...item, tasksToDelete });
+    } else {
+      setItemToDelete(item);
+    }
+    setShowDeleteModal(true);
+  }
+
+  const statuses = ["not started", "in progress", "done"];
+
+  function getNextStatus(current) {
+    const idx = statuses.indexOf(current);
+    return idx < statuses.length - 1 ? statuses[idx + 1] : statuses[idx];
+  }
+
+  function getPrevStatus(current) {
+    const idx = statuses.indexOf(current);
+    return idx > 0 ? statuses[idx - 1] : statuses[idx];
+  }
+
+  function updateTaskStatus(itemId, direction) {
+    const task = dataCtx.tasks.find((t) => t.id === itemId);
+    if (!task) return;
+    const newStatus =
+      direction === "left"
+        ? getNextStatus(task.status)
+        : getPrevStatus(task.status);
+
+    dataCtx.updateTask(itemId, { ...task, status: newStatus });
+  }
+
+  function renderHiddenItem({ item }) {
+    const nextStatus = getNextStatus(item.status);
+    const prevStatus = getPrevStatus(item.status);
+    const isInProgress =
+      item.status === "in progress" ? styles.pastelGreen : null;
+
+    if (data === "goal") {
+      return (
+        <View style={styles.rowBackGoal}>
+          <TouchableOpacity
+            style={[styles.backButton, styles.deleteButton]}
+            onPress={() => handleDelete(item)}
+          >
+            <Text style={styles.deleteText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.rowBack}>
+        <View style={[styles.statusBox, styles.leftSwipe]}>
+          <Text style={styles.statusText}>{capitalizeWords(prevStatus)}</Text>
+        </View>
+
+        <View style={[styles.statusBox, styles.rightSwipe, isInProgress]}>
+          {item.status === "done" ? (
+            <TouchableOpacity
+              style={[styles.backButton, styles.deleteButton]}
+              onPress={() => handleDelete(item)}
+            >
+              <Text style={styles.deleteText}>Delete</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.statusText}>{capitalizeWords(nextStatus)}</Text>
+          )}
+        </View>
+      </View>
     );
   }
-
-  function handleEdit(itemId) {
-    const screen = data === "goal" ? "GoalDetail" : "TaskDetail";
-    const screenId = data === "goal" ? "goalId" : "taskId";
-
-    navigation.navigate(screen, {
-      [screenId]: itemId,
-    });
-  }
+  const today = new Date().toISOString().split("T")[0];
+  const todaysRecurringTasks = dataCtx.getRecurringTasksForDate(today);
 
   return (
     <TouchableWithoutFeedback
       onPress={() => {
         if (openRowKey && rowMapRef.current[openRowKey]) {
-          console.log(openRowKey);
           rowMapRef.current[openRowKey].closeRow();
           setOpenRowKey(null);
         }
       }}
     >
-      <SafeAreaView
-        style={styles.container}
-        edges={["top"]}
-      >
+      <View>
         <Text style={styles.header}>{`My ${capitalizeWords(data)}s`}</Text>
         {data === "task" && (
           <TaskFilter
@@ -108,17 +166,32 @@ function AllItems({ data }) {
             setFilterType={setFilterType}
           />
         )}
-
         <SwipeListView
           data={sortedData}
           keyExtractor={(item) => item.id}
           extraData={openRowKey}
           onRowOpen={(rowKey, rowMap) => {
+            const direction = lastSwipeDirectionRef.current[rowKey];
+            const task = sortedData.find((t) => t.id === rowKey);
+            if (!task || !direction) return;
+
+            if (data !== "goal") {
+              if (direction === "left" && task.status !== "done") {
+                updateTaskStatus(rowKey, "left");
+                rowMap?.[rowKey]?.closeRow();
+              } else if (direction === "right") {
+                updateTaskStatus(rowKey, "right");
+                rowMap?.[rowKey]?.closeRow();
+              }
+            }
+
+            delete lastSwipeDirectionRef.current[rowKey];
             setOpenRowKey(rowKey);
             rowMapRef.current = rowMap;
           }}
           onRowClose={(rowKey) => {
             if (openRowKey === rowKey) setOpenRowKey(null);
+            delete lastSwipeDirectionRef.current[rowKey];
           }}
           renderItem={({ item }) => (
             <View
@@ -133,27 +206,36 @@ function AllItems({ data }) {
               />
             </View>
           )}
-          renderHiddenItem={({ item }) => (
-            <View style={styles.rowBack}>
-              <TouchableOpacity
-                style={[styles.backButton, styles.editButton]}
-                onPress={() => handleEdit(item.id)}
-              >
-                <Text style={styles.backText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.backButton, styles.deleteButton]}
-                onPress={() => handleDelete(item.id)}
-              >
-                <Text style={styles.backText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          rightOpenValue={-150}
-          disableRightSwipe
+          rightOpenValue={-100}
+          leftOpenValue={100}
+          onSwipeValueChange={({ key, value }) => {
+            if (value <= -100) {
+              lastSwipeDirectionRef.current[key] = "left";
+            } else if (value >= 100) {
+              lastSwipeDirectionRef.current[key] = "right";
+            }
+          }}
+          disableRightSwipe={data === "goal"}
+          renderHiddenItem={renderHiddenItem}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
-      </SafeAreaView>
+        <DeleteModal
+          visible={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={() => {
+            const action = data === "goal" ? "deleteGoal" : "deleteTask";
+            dataCtx[action](itemToDelete.id);
+            setShowDeleteModal(false);
+          }}
+          onDeleteWithTasks={() => {
+            dataCtx.deleteGoalWithTasks(itemToDelete.id);
+            setShowDeleteModal(false);
+          }}
+          itemTitle={itemToDelete.title}
+          itemType={data}
+          tasksToDelete={itemToDelete.tasksToDelete}
+        />
+      </View>
     </TouchableWithoutFeedback>
   );
 }
@@ -161,18 +243,6 @@ function AllItems({ data }) {
 export default AllItems;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FAFAFA",
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
   header: {
     fontSize: 22,
     fontWeight: "600",
@@ -200,28 +270,57 @@ const styles = StyleSheet.create({
   rowBack: {
     flex: 1,
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 4,
+    backgroundColor: "#f0f0f0",
     borderRadius: 12,
-    overflow: "hidden",
+    marginVertical: 4,
   },
   backButton: {
-    width: 75,
+    width: 100,
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
-  editButton: {
-    backgroundColor: "#A5B4FC",
-  },
   deleteButton: {
-    backgroundColor: "#EF4444",
+    backgroundColor: GlobalStyles.red800,
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
-  backText: {
+  deleteText: {
     color: "#FFF",
     fontWeight: "600",
+    textAlign: "center",
+  },
+  statusBox: {
+    width: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+  },
+  leftSwipe: {
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    backgroundColor: GlobalStyles.indigo600,
+  },
+  rightSwipe: {
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: GlobalStyles.indigo500,
+  },
+  pastelGreen: {
+    backgroundColor: GlobalStyles.pastelGreen,
+  },
+  rowBackGoal: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 12,
+    marginVertical: 4,
+  },
+  middleDeleteButton: {
+    backgroundColor: GlobalStyles.red500,
   },
 });
