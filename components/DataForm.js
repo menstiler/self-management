@@ -4,6 +4,7 @@ import {
   useState,
   useImperativeHandle,
   forwardRef,
+  useCallback,
 } from "react";
 import {
   TextInput,
@@ -27,18 +28,16 @@ import DeleteModal from "./form/DeleteModal";
 import Checkbox from "expo-checkbox";
 import * as Progress from "react-native-progress";
 import { useGoalMeta } from "../hooks/useGoalMeta";
-import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Feather } from "@expo/vector-icons";
 
 const DataForm = forwardRef(
   (
     {
       data,
-      item,
       hasManyRelationship,
       editingObj,
       updateEditingObj,
-      onSave,
-      onCancel,
       onDelete,
       onDeleteItemAndRelationships,
     },
@@ -48,9 +47,46 @@ const DataForm = forwardRef(
     const navigation = useNavigation();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [tasksToDelete, setTasksToDelete] = useState([]);
+    const [recurringInstancesToDelete, setRecurringInstancesToDelete] =
+      useState([]);
+    const [localIsRecurring, setLocalIsRecurring] = useState(false);
+
+    // Sync local state with context state
+    useEffect(() => {
+      if (data === "task") {
+        setLocalIsRecurring(Boolean(dataCtx[editingObj].isRecurring));
+      }
+    }, [dataCtx[editingObj].isRecurring, data, editingObj]);
+
+    // Stable callback for checkbox changes
+    const handleRecurringChange = useCallback(
+      (value) => {
+        setLocalIsRecurring(value);
+
+        // Update context directly
+        const updatedObj = { ...dataCtx[editingObj], isRecurring: value };
+        dataCtx[updateEditingObj](updatedObj);
+
+        // Set default dates when recurring is checked
+        if (value) {
+          const today = new Date();
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7); // Default to 7 days from now
+
+          const updatedWithDates = {
+            ...updatedObj,
+            startDate: today,
+            endDate: endDate,
+          };
+          dataCtx[updateEditingObj](updatedWithDates);
+        }
+      },
+      [dataCtx, editingObj, updateEditingObj]
+    );
 
     function updateInputHandler(input, value) {
-      dataCtx[updateEditingObj]({ ...dataCtx[editingObj], [input]: value });
+      const updatedObj = { ...dataCtx[editingObj], [input]: value };
+      dataCtx[updateEditingObj](updatedObj);
     }
 
     function updateDateHandler(_, date) {
@@ -60,20 +96,39 @@ const DataForm = forwardRef(
       });
     }
 
+    function updateRecurringDateHandler(field, event, date) {
+      if (date) {
+        dataCtx[updateEditingObj]({
+          ...dataCtx[editingObj],
+          [field]: date,
+        });
+      }
+    }
+
+    function formatDateForDisplay(date) {
+      if (!date) return new Date();
+
+      // If it's already a Date object, return it
+      if (date instanceof Date) return date;
+
+      // If it's a string, try to parse it
+      if (typeof date === "string") {
+        const parsedDate = new Date(date);
+        // Check if the parsed date is valid
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
+      }
+
+      // Fallback to current date
+      return new Date();
+    }
+
     function updateDurationHandler(input, value) {
       dataCtx.updateEditingTask({
         ...dataCtx.editingTask,
         duration: { ...dataCtx.editingTask.duration, [input]: value },
       });
-    }
-
-    function saveHandler() {
-      onSave();
-    }
-
-    function cancelHandler() {
-      dataCtx[updateEditingObj](item);
-      onCancel();
     }
 
     function openAction(action) {
@@ -92,20 +147,98 @@ const DataForm = forwardRef(
       navigation.goBack();
     }
 
-    const { progress, status } = useGoalMeta(dataCtx[editingObj]);
+    function handleDeleteRecurringTask() {
+      const currentTask = dataCtx[editingObj];
+
+      // Check if this is a parent recurring task
+      if (currentTask.isRecurring && !currentTask.parentTaskId) {
+        // Find all instances of this recurring task
+        const instances = dataCtx.tasks.filter(
+          (task) => task.parentTaskId === currentTask.id
+        );
+
+        if (instances.length > 0) {
+          setRecurringInstancesToDelete(instances);
+          setShowDeleteModal(true);
+        } else {
+          // No instances, just delete the parent
+          dataCtx.deleteRecurringTask(currentTask.id);
+          navigation.goBack();
+        }
+      } else if (currentTask.parentTaskId) {
+        // This is a recurring task instance
+        // Find the parent task
+        const parentTask = dataCtx.tasks.find(
+          (task) => task.id === currentTask.parentTaskId
+        );
+
+        if (parentTask) {
+          // Find all instances of this parent
+          const instances = dataCtx.tasks.filter(
+            (task) => task.parentTaskId === parentTask.id
+          );
+
+          if (instances.length > 1) {
+            // More than just this instance, ask about deleting all
+            setRecurringInstancesToDelete(instances);
+            setShowDeleteModal(true);
+          } else {
+            // Only this instance, delete the parent and all instances
+            dataCtx.deleteRecurringTask(parentTask.id);
+            navigation.goBack();
+          }
+        } else {
+          // Fallback: just delete this instance
+          dataCtx.deleteTask(currentTask.id);
+          navigation.goBack();
+        }
+      } else {
+        // Regular task
+        deleteHandler();
+      }
+    }
+
+    function deleteRecurringTaskWithInstances() {
+      const currentTask = dataCtx[editingObj];
+
+      if (currentTask.isRecurring && !currentTask.parentTaskId) {
+        // Delete parent and all instances
+        dataCtx.deleteRecurringTask(currentTask.id);
+      } else if (currentTask.parentTaskId) {
+        // Delete parent and all instances
+        const parentTask = dataCtx.tasks.find(
+          (task) => task.id === currentTask.parentTaskId
+        );
+        if (parentTask) {
+          dataCtx.deleteRecurringTask(parentTask.id);
+        }
+      }
+
+      setShowDeleteModal(false);
+      navigation.goBack();
+    }
+
+    function deleteRecurringTaskOnly() {
+      const currentTask = dataCtx[editingObj];
+
+      if (currentTask.isRecurring && !currentTask.parentTaskId) {
+        // Delete only the parent, keep instances
+        dataCtx.deleteTask(currentTask.id);
+      } else if (currentTask.parentTaskId) {
+        // Delete only this instance
+        dataCtx.deleteTask(currentTask.id);
+      }
+
+      setShowDeleteModal(false);
+      navigation.goBack();
+    }
+
+    const { progress, status, uniqueGoalTasks } = useGoalMeta(
+      dataCtx[editingObj]
+    );
 
     useEffect(() => {
       if (data === "goal") {
-        const allTasks = dataCtx.tasks || [];
-
-        const goalTasks = allTasks.filter((task) =>
-          (item.tasks || []).includes(task.id)
-        );
-
-        const uniqueGoalTasks = goalTasks.filter(
-          (task) => task.goals.length === 1
-        );
-
         setTasksToDelete(uniqueGoalTasks);
 
         if (dataCtx[editingObj].progress !== progress) {
@@ -124,7 +257,15 @@ const DataForm = forwardRef(
           }
         }
       }
-    }, [data, editingObj, updateEditingObj, dataCtx, progress, status]);
+    }, [
+      data,
+      editingObj,
+      updateEditingObj,
+      dataCtx,
+      progress,
+      status,
+      uniqueGoalTasks,
+    ]);
 
     function duplicateTaskHandler() {
       if (data !== "task") return;
@@ -172,13 +313,26 @@ const DataForm = forwardRef(
             keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
           >
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Title</Text>
-              <TextInput
-                style={styles.input}
-                onChangeText={(value) => updateInputHandler("title", value)}
-                value={dataCtx[editingObj].title}
-                placeholder="Enter title"
-              />
+              <View style={styles.titleContainer}>
+                <TextInput
+                  style={styles.titleInput}
+                  onChangeText={(value) => updateInputHandler("title", value)}
+                  value={dataCtx[editingObj].title}
+                  placeholder="New task"
+                  placeholderTextColor="#999"
+                  autoFocus={!dataCtx[editingObj].id}
+                />
+                {data === "task" &&
+                  (localIsRecurring ||
+                    Boolean(dataCtx[editingObj].parentTaskId)) && (
+                    <Feather
+                      name="repeat"
+                      size={20}
+                      color="#888"
+                      style={{ marginLeft: 8 }}
+                    />
+                  )}
+              </View>
             </View>
             <View style={[styles.fieldGroup, styles.row]}>
               <View style={styles.flex}>
@@ -246,9 +400,103 @@ const DataForm = forwardRef(
             )}
             <DateField
               data={data}
-              value={dataCtx[editingObj][data === "task" ? "date" : "deadline"]}
+              value={formatDateForDisplay(
+                dataCtx[editingObj][data === "task" ? "date" : "deadline"]
+              )}
               updateDateHandler={updateDateHandler}
             />
+
+            {data === "task" && Boolean(dataCtx[editingObj].parentTaskId) && (
+              <View style={styles.fieldGroup}>
+                <View style={styles.recurringInfoContainer}>
+                  <Text style={styles.recurringInfoText}>
+                    This is a recurring task instance
+                  </Text>
+                  <Button
+                    title="Edit Parent Task"
+                    onPress={() => {
+                      const parentTask = dataCtx.tasks.find(
+                        (task) => task.id === dataCtx[editingObj].parentTaskId
+                      );
+                      if (parentTask) {
+                        navigation.navigate("TaskDetail", {
+                          taskId: parentTask.id,
+                        });
+                      }
+                    }}
+                    color="#4CAF50"
+                  />
+                </View>
+              </View>
+            )}
+
+            {data === "task" && !Boolean(dataCtx[editingObj].parentTaskId) && (
+              <>
+                <View style={styles.fieldGroup}>
+                  <View style={styles.checkboxContainer}>
+                    <Checkbox
+                      value={localIsRecurring}
+                      onValueChange={handleRecurringChange}
+                    />
+                    <Text style={styles.checkboxLabel}>Recurring Task</Text>
+                  </View>
+                </View>
+
+                {localIsRecurring && (
+                  <>
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.label}>Start Date</Text>
+                      <DateTimePicker
+                        value={formatDateForDisplay(
+                          dataCtx[editingObj].startDate
+                        )}
+                        mode="date"
+                        display="default"
+                        onChange={(event, date) =>
+                          updateRecurringDateHandler("startDate", event, date)
+                        }
+                        minimumDate={new Date()}
+                      />
+                    </View>
+
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.label}>End Date</Text>
+                      <DateTimePicker
+                        value={formatDateForDisplay(
+                          dataCtx[editingObj].endDate
+                        )}
+                        mode="date"
+                        display="default"
+                        onChange={(event, date) =>
+                          updateRecurringDateHandler("endDate", event, date)
+                        }
+                        minimumDate={formatDateForDisplay(
+                          dataCtx[editingObj].startDate
+                        )}
+                      />
+                    </View>
+                  </>
+                )}
+
+                {localIsRecurring && dataCtx[editingObj].id && (
+                  <View style={styles.fieldGroup}>
+                    <View style={styles.recurringInfoContainer}>
+                      <Text style={styles.recurringInfoText}>
+                        This recurring task has{" "}
+                        {
+                          dataCtx.tasks.filter(
+                            (task) =>
+                              task.parentTaskId === dataCtx[editingObj].id
+                          ).length
+                        }{" "}
+                        instances
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </>
+            )}
+
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Description</Text>
               <TextInput
@@ -268,7 +516,17 @@ const DataForm = forwardRef(
           {dataCtx[editingObj].id && (
             <Button
               title={`Delete ${capitalizeWords(data)}`}
-              onPress={() => setShowDeleteModal(true)}
+              onPress={() => {
+                if (
+                  data === "task" &&
+                  (dataCtx[editingObj].isRecurring ||
+                    dataCtx[editingObj].parentTaskId)
+                ) {
+                  handleDeleteRecurringTask();
+                } else {
+                  setShowDeleteModal(true);
+                }
+              }}
               color="#e53935"
             />
           )}
@@ -285,9 +543,12 @@ const DataForm = forwardRef(
             deleteGoalWithTasksHandler();
             setShowDeleteModal(false);
           }}
+          onDeleteRecurringWithInstances={deleteRecurringTaskWithInstances}
+          onDeleteRecurringOnly={deleteRecurringTaskOnly}
           itemTitle={dataCtx[editingObj].title}
           itemType={data}
           tasksToDelete={tasksToDelete}
+          recurringInstancesToDelete={recurringInstancesToDelete}
         />
       </View>
     );
@@ -376,5 +637,57 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderColor: "#eee",
+  },
+  recurringIndicator: {
+    color: "#666",
+    fontSize: 14,
+    fontStyle: "italic",
+  },
+  disabledText: {
+    color: "#999",
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  titleInput: {
+    flex: 1,
+    fontSize: 32,
+    fontWeight: 600,
+    color: "#000",
+    paddingVertical: 0,
+  },
+  recurringInfoContainer: {
+    backgroundColor: "#f0f8ff",
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  recurringInfoText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 12,
+    fontStyle: "italic",
+  },
+  customCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#555",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  customCheckboxChecked: {
+    backgroundColor: "#4caf50",
+    borderColor: "#4caf50",
+  },
+  checkmark: {
+    fontSize: 18,
+    color: "#fff",
   },
 });

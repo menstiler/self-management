@@ -64,7 +64,56 @@ function DataDetail({
   }
 
   function saveItem() {
-    dataCtx[updateObj](dataId, dataCtx[editingObj]);
+    console.log("saveItem called");
+    console.log("data:", data);
+    console.log("editingObj:", dataCtx[editingObj]);
+    console.log("isRecurring:", dataCtx[editingObj].isRecurring);
+    console.log("parentTaskId:", dataCtx[editingObj].parentTaskId);
+    console.log("startDate:", dataCtx[editingObj].startDate);
+    console.log("endDate:", dataCtx[editingObj].endDate);
+
+    // Check if this is a recurring task (parent or instance)
+    if (
+      data === "task" &&
+      (dataCtx[editingObj].isRecurring || dataCtx[editingObj].parentTaskId)
+    ) {
+      console.log("Updating recurring task");
+      // Determine the parent task ID
+      const parentTaskId = dataCtx[editingObj].parentTaskId || dataId;
+      console.log("parentTaskId:", parentTaskId);
+
+      // When updating from an instance, filter out instance-specific properties
+      const updateData = { ...dataCtx[editingObj] };
+
+      // Remove instance-specific properties that shouldn't be copied to parent
+      if (dataCtx[editingObj].parentTaskId) {
+        console.log("Updating from instance");
+        delete updateData.date;
+        delete updateData.parentTaskId;
+        delete updateData.isRecurring;
+        delete updateData.id;
+      } else {
+        console.log("Updating parent task");
+        // When editing the parent task itself, ensure isRecurring is set to true
+        updateData.isRecurring = true;
+
+        // Ensure startDate and endDate are set for parent tasks
+        if (!updateData.startDate) {
+          updateData.startDate = new Date();
+        }
+        if (!updateData.endDate) {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7);
+          updateData.endDate = endDate;
+        }
+      }
+
+      console.log("updateData:", updateData);
+      dataCtx.updateRecurringTask(parentTaskId, updateData);
+    } else {
+      console.log("Updating regular task");
+      dataCtx[updateObj](dataId, dataCtx[editingObj]);
+    }
     setItem(dataCtx[editingObj]);
   }
 

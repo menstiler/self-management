@@ -13,9 +13,12 @@ export default function DeleteModal({
   onClose,
   onDelete,
   onDeleteWithTasks,
+  onDeleteRecurringWithInstances,
+  onDeleteRecurringOnly,
   itemTitle,
   itemType,
   tasksToDelete,
+  recurringInstancesToDelete,
 }) {
   const capitalizeWords = (str) => str.replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -29,34 +32,79 @@ export default function DeleteModal({
       <View style={styles.backdrop}>
         <View style={styles.modalBox}>
           <Text style={styles.title}>Deleting {itemTitle}</Text>
-          <Text style={styles.message}>
-            Are you sure you want to delete this {capitalizeWords(itemType)}?
-          </Text>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.cancelBtn}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
+          {itemType === "task" &&
+          recurringInstancesToDelete &&
+          recurringInstancesToDelete.length > 0 ? (
+            <>
+              <Text style={styles.message}>
+                This is a recurring task with{" "}
+                {recurringInstancesToDelete.length} instances (past and future).
+                What would you like to delete?
+              </Text>
 
-            <TouchableOpacity
-              style={styles.destructiveBtn}
-              onPress={onDelete}
-            >
-              <Text style={styles.destructiveText}>Delete</Text>
-            </TouchableOpacity>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={onClose}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
 
-            {itemType === "goal" && tasksToDelete.length > 0 && (
-              <TouchableOpacity
-                style={styles.destructiveBtn}
-                onPress={onDeleteWithTasks}
-              >
-                <Text style={styles.destructiveText}>Delete with Tasks</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+                <TouchableOpacity
+                  style={styles.destructiveBtn}
+                  onPress={onDeleteRecurringOnly}
+                >
+                  <Text style={styles.destructiveText}>
+                    Delete This Task Only
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.destructiveBtn}
+                  onPress={onDeleteRecurringWithInstances}
+                >
+                  <Text style={styles.destructiveText}>
+                    Delete All Instances
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.message}>
+                Are you sure you want to delete this {capitalizeWords(itemType)}
+                ?
+              </Text>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={onClose}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.destructiveBtn}
+                  onPress={onDelete}
+                >
+                  <Text style={styles.destructiveText}>Delete</Text>
+                </TouchableOpacity>
+
+                {itemType === "goal" && tasksToDelete.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.destructiveBtn}
+                    onPress={onDeleteWithTasks}
+                  >
+                    <Text style={styles.destructiveText}>
+                      Delete with Tasks
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </>
+          )}
         </View>
       </View>
     </Modal>

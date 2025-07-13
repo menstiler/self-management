@@ -13,6 +13,9 @@ const initialTaskState = {
   priority: "low",
   status: "not started",
   goals: [],
+  isRecurring: false,
+  startDate: new Date(),
+  endDate: new Date(),
 };
 
 function AddTask({ navigation }) {
@@ -38,7 +41,16 @@ function AddTask({ navigation }) {
   }, [isFocused]);
 
   function saveHandler() {
-    dataCtx.addTask(dataCtx.editingTask);
+    // Check if this is a recurring task
+    if (
+      dataCtx.editingTask.isRecurring &&
+      dataCtx.editingTask.startDate &&
+      dataCtx.editingTask.endDate
+    ) {
+      dataCtx.addRecurringTask(dataCtx.editingTask);
+    } else {
+      dataCtx.addTask(dataCtx.editingTask);
+    }
     dataCtx.updateEditingTask(initialTaskState);
     navigation.goBack();
   }

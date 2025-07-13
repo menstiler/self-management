@@ -8,6 +8,10 @@ export default class Task {
     priority,
     status,
     goals,
+    isRecurring = false,
+    startDate = null,
+    endDate = null,
+    parentTaskId = null,
   }) {
     this.id = id;
     this.title = title;
@@ -17,5 +21,9 @@ export default class Task {
     this.priority = priority;
     this.status = status;
     this.goals = goals;
+    this.isRecurring = isRecurring;
+    this.startDate = startDate;
+    this.endDate = endDate;
+    this.parentTaskId = parentTaskId;
   }
 }

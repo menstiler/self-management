@@ -45,6 +45,27 @@ function AllItems({ data }) {
   );
 
   const filteredTaskByDay = [...dataCtx.tasks].filter((task) => {
+    // Hide parent recurring tasks (they are just templates)
+    if (task.isRecurring && !task.parentTaskId) {
+      return false;
+    }
+
+    // For recurring task instances, show all instances
+    if (task.parentTaskId) {
+      // Apply date filters to recurring instances based on filterType
+      switch (filterType) {
+        case 1:
+          return isSameDay(new Date(task.date), new Date());
+        case 2:
+          return isSameWeek(task.date);
+        case 3:
+          return hasDateInPastDays(task.date, 30);
+        default:
+          return true; // Show all recurring instances when no date filter is applied
+      }
+    }
+
+    // For non-recurring tasks, apply the existing date filters
     switch (filterType) {
       case 1:
         return isSameDay(new Date(task.date), new Date());
@@ -52,10 +73,8 @@ function AllItems({ data }) {
         return isSameWeek(task.date);
       case 3:
         return hasDateInPastDays(task.date, 30);
-      case 4:
-        return hasDateInPastDays(task.date, 7);
       default:
-        return task;
+        return true; // Show all non-recurring tasks when no date filter is applied
     }
   });
 
@@ -146,8 +165,6 @@ function AllItems({ data }) {
       </View>
     );
   }
-  const today = new Date().toISOString().split("T")[0];
-  const todaysRecurringTasks = dataCtx.getRecurringTasksForDate(today);
 
   return (
     <TouchableWithoutFeedback

@@ -9,10 +9,14 @@ export function capitalizeWords(string) {
 }
 
 export function isSameDay(dateA, dateB) {
+  // Ensure both dates are Date objects
+  const date1 = dateA instanceof Date ? dateA : new Date(dateA);
+  const date2 = dateB instanceof Date ? dateB : new Date(dateB);
+
   return (
-    dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate()
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
   );
 }
 
@@ -28,7 +32,8 @@ export function isSameWeek(taskDate) {
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
 
-  const inputDate = new Date(taskDate);
+  // Ensure taskDate is a Date object
+  const inputDate = taskDate instanceof Date ? taskDate : new Date(taskDate);
   const normalizedInputDate = new Date(
     inputDate.getFullYear(),
     inputDate.getMonth(),
@@ -44,10 +49,12 @@ export function hasDateInPastDays(taskDate, daysAgo) {
   const dateInPast = new Date(today);
   dateInPast.setDate(today.getDate() - daysAgo);
 
+  // Ensure taskDate is a Date object
+  const inputDate = taskDate instanceof Date ? taskDate : new Date(taskDate);
   const date = new Date(
-    taskDate.getFullYear(),
-    taskDate.getMonth(),
-    taskDate.getDate()
+    inputDate.getFullYear(),
+    inputDate.getMonth(),
+    inputDate.getDate()
   );
 
   return date >= dateInPast && date <= today;
