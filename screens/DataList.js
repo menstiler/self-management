@@ -3,14 +3,18 @@ import { View, Text, StyleSheet } from "react-native";
 import { DataContext } from "../store/data-context.js";
 import AllItems from "../components/AllItems.js";
 import { capitalizeWords } from "../util/task.js";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 function DataList({ route }) {
   const dataCtx = useContext(DataContext);
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView
-      style={styles.container}
+      style={[styles.container, { paddingBottom: insets.bottom + 80 }]}
       edges={["top"]}
     >
       {dataCtx[route.params.data].length === 0 ? (
