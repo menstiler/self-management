@@ -29,6 +29,37 @@ export const TASKS = [
     status: "in progress",
     goals: ["1"],
   },
+  {
+    id: "4",
+    title: "Daily Exercise",
+    duration: { days: 0, hours: 0, minutes: 30 },
+    priority: "high",
+    description: "30 minutes of cardio or strength training",
+    date: new Date(), // Today's date
+    status: "not started",
+    goals: ["1"],
+    isRecurring: true,
+    repeat: "daily",
+    startDate: new Date(), // Today
+    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from today
+    completedDates: [], // No completed dates yet
+  },
+  {
+    id: "5",
+    title: "Weekly Team Meeting",
+    duration: { days: 0, hours: 1, minutes: 0 },
+    priority: "medium",
+    description: "Weekly team sync and planning",
+    date: new Date(), // Today's date
+    status: "not started",
+    goals: ["1"],
+    isRecurring: true,
+    repeat: "weekly",
+    dayOfWeek: "Monday",
+    startDate: new Date(), // Today
+    endDate: new Date(Date.now() + 12 * 7 * 24 * 60 * 60 * 1000), // 12 weeks from today
+    completedDates: [], // No completed dates yet
+  },
 ];
 
 export const GOALS = [

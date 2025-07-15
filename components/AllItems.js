@@ -45,27 +45,6 @@ function AllItems({ data }) {
   );
 
   const filteredTaskByDay = [...dataCtx.tasks].filter((task) => {
-    // Hide parent recurring tasks (they are just templates)
-    if (task.isRecurring && !task.parentTaskId) {
-      return false;
-    }
-
-    // For recurring task instances, show all instances
-    if (task.parentTaskId) {
-      // Apply date filters to recurring instances based on filterType
-      switch (filterType) {
-        case 1:
-          return isSameDay(new Date(task.date), new Date());
-        case 2:
-          return isSameWeek(task.date);
-        case 3:
-          return hasDateInPastDays(task.date, 30);
-        default:
-          return true; // Show all recurring instances when no date filter is applied
-      }
-    }
-
-    // For non-recurring tasks, apply the existing date filters
     switch (filterType) {
       case 1:
         return isSameDay(new Date(task.date), new Date());
@@ -74,7 +53,7 @@ function AllItems({ data }) {
       case 3:
         return hasDateInPastDays(task.date, 30);
       default:
-        return true; // Show all non-recurring tasks when no date filter is applied
+        return true;
     }
   });
 
@@ -84,7 +63,7 @@ function AllItems({ data }) {
   function handleDelete(item) {
     if (data === "goal") {
       let tasksToDelete = [];
-      const goalTasks = dataCtx.tasks.filter((task) =>
+      const goalTasks = dataCtx.allTasks.filter((task) =>
         (item.tasks || []).includes(task.id)
       );
       const uniqueGoalTasks = goalTasks.filter(
@@ -96,10 +75,16 @@ function AllItems({ data }) {
       }
 
       setItemToDelete({ ...item, tasksToDelete });
+      setShowDeleteModal(true);
     } else {
-      setItemToDelete(item);
+      if (item.isRecurring) {
+        setItemToDelete({ ...item, isRecurring: true });
+        setShowDeleteModal(true);
+      } else {
+        setItemToDelete(item);
+        setShowDeleteModal(true);
+      }
     }
-    setShowDeleteModal(true);
   }
 
   const statuses = ["not started", "in progress", "done"];
@@ -115,14 +100,28 @@ function AllItems({ data }) {
   }
 
   function updateTaskStatus(itemId, direction) {
-    const task = dataCtx.tasks.find((t) => t.id === itemId);
+    const task = dataCtx.allTasks.find((t) => t.id === itemId);
     if (!task) return;
+
     const newStatus =
       direction === "left"
         ? getNextStatus(task.status)
         : getPrevStatus(task.status);
 
     dataCtx.updateTask(itemId, { ...task, status: newStatus });
+  }
+
+  function deleteRecurringTaskCompletely() {
+    const currentTask = itemToDelete;
+    dataCtx.deleteRecurringTask(currentTask.id);
+    setShowDeleteModal(false);
+  }
+
+  function deleteRecurringTaskInstance() {
+    const currentTask = itemToDelete;
+    const today = new Date().toISOString().split("T")[0];
+    dataCtx.completeRecurringTask(currentTask.id, today);
+    setShowDeleteModal(false);
   }
 
   function renderHiddenItem({ item }) {
@@ -240,17 +239,25 @@ function AllItems({ data }) {
           visible={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
           onDelete={() => {
-            const action = data === "goal" ? "deleteGoal" : "deleteTask";
-            dataCtx[action](itemToDelete.id);
+            if (data === "goal") {
+              dataCtx.deleteGoal(itemToDelete.id);
+            } else if (itemToDelete.isRecurring) {
+              deleteRecurringTaskCompletely();
+            } else {
+              dataCtx.deleteTask(itemToDelete.id);
+            }
             setShowDeleteModal(false);
           }}
           onDeleteWithTasks={() => {
             dataCtx.deleteGoalWithTasks(itemToDelete.id);
             setShowDeleteModal(false);
           }}
+          onDeleteRecurringWithInstances={deleteRecurringTaskCompletely}
+          onDeleteRecurringOnly={deleteRecurringTaskInstance}
           itemTitle={itemToDelete.title}
           itemType={data}
           tasksToDelete={itemToDelete.tasksToDelete}
+          isRecurring={itemToDelete.isRecurring}
         />
       </View>
     </TouchableWithoutFeedback>
@@ -309,25 +316,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  statusBox: {
-    width: 100,
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100%",
-  },
-  leftSwipe: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    backgroundColor: GlobalStyles.indigo600,
-  },
-  rightSwipe: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    backgroundColor: GlobalStyles.indigo500,
-  },
-  pastelGreen: {
-    backgroundColor: GlobalStyles.pastelGreen,
-  },
   rowBackGoal: {
     flex: 1,
     flexDirection: "row",
@@ -337,7 +325,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginVertical: 4,
   },
-  middleDeleteButton: {
-    backgroundColor: GlobalStyles.red500,
+  statusBox: {
+    width: 100,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  leftSwipe: {
+    backgroundColor: "#FF9800",
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  rightSwipe: {
+    backgroundColor: "#4CAF50",
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  statusText: {
+    color: "#FFF",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  pastelGreen: {
+    backgroundColor: "#81C784",
   },
 });

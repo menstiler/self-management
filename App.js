@@ -68,13 +68,18 @@ export default function App() {
           <Stack.Screen
             name="TaskDetail"
             options={({ navigation }) => ({
-              headerRight: () => (
-                <DropdownMenu
-                  onDuplicate={() => {
-                    navigation.setParams({ duplicate: true });
-                  }}
-                />
-              ),
+              headerRight: () => {
+                return (
+                  <DropdownMenu
+                    onDuplicate={() => {
+                      navigation.setParams({ duplicate: true });
+                    }}
+                    onDelete={() => {
+                      navigation.setParams({ deleteTask: true });
+                    }}
+                  />
+                );
+              },
             })}
           >
             {({ route, navigation }) => (
@@ -91,7 +96,23 @@ export default function App() {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="GoalDetail">
+          <Stack.Screen
+            name="GoalDetail"
+            options={({ navigation }) => ({
+              headerRight: () => {
+                return (
+                  <DropdownMenu
+                    onDuplicate={() => {
+                      navigation.setParams({ duplicate: true });
+                    }}
+                    onDelete={() => {
+                      navigation.setParams({ deleteGoal: true });
+                    }}
+                  />
+                );
+              },
+            })}
+          >
             {({ route, navigation }) => (
               <DataDetail
                 data="goal"

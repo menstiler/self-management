@@ -1,12 +1,4 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  Modal,
-  Button,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, Modal, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function DeleteModal({
   visible,
@@ -18,10 +10,9 @@ export default function DeleteModal({
   itemTitle,
   itemType,
   tasksToDelete,
-  recurringInstancesToDelete,
+  isRecurring,
 }) {
   const capitalizeWords = (str) => str.replace(/\b\w/g, (c) => c.toUpperCase());
-
   return (
     <Modal
       transparent
@@ -33,14 +24,10 @@ export default function DeleteModal({
         <View style={styles.modalBox}>
           <Text style={styles.title}>Deleting {itemTitle}</Text>
 
-          {itemType === "task" &&
-          recurringInstancesToDelete &&
-          recurringInstancesToDelete.length > 0 ? (
+          {itemType === "task" && isRecurring ? (
             <>
               <Text style={styles.message}>
-                This is a recurring task with{" "}
-                {recurringInstancesToDelete.length} instances (past and future).
-                What would you like to delete?
+                This is a recurring task. What would you like to delete?
               </Text>
 
               <View style={styles.buttonRow}>
@@ -56,7 +43,7 @@ export default function DeleteModal({
                   onPress={onDeleteRecurringOnly}
                 >
                   <Text style={styles.destructiveText}>
-                    Delete This Task Only
+                    Only This Task Occurrence
                   </Text>
                 </TouchableOpacity>
 
@@ -65,7 +52,7 @@ export default function DeleteModal({
                   onPress={onDeleteRecurringWithInstances}
                 >
                   <Text style={styles.destructiveText}>
-                    Delete All Instances
+                    All Past and Future Occurrences of this Task
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -158,5 +145,6 @@ const styles = StyleSheet.create({
   destructiveText: {
     color: "white",
     fontWeight: "bold",
+    textAlign: "center",
   },
 });

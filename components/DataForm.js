@@ -10,7 +10,6 @@ import {
   TextInput,
   View,
   Text,
-  Button,
   Pressable,
   StyleSheet,
   Platform,
@@ -47,27 +46,21 @@ const DataForm = forwardRef(
     const navigation = useNavigation();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [tasksToDelete, setTasksToDelete] = useState([]);
-    const [recurringInstancesToDelete, setRecurringInstancesToDelete] =
-      useState([]);
     const [localIsRecurring, setLocalIsRecurring] = useState(false);
 
-    // Sync local state with context state
     useEffect(() => {
       if (data === "task") {
         setLocalIsRecurring(Boolean(dataCtx[editingObj].isRecurring));
       }
     }, [dataCtx[editingObj].isRecurring, data, editingObj]);
 
-    // Stable callback for checkbox changes
     const handleRecurringChange = useCallback(
       (value) => {
         setLocalIsRecurring(value);
 
-        // Update context directly
         const updatedObj = { ...dataCtx[editingObj], isRecurring: value };
         dataCtx[updateEditingObj](updatedObj);
 
-        // Set default dates when recurring is checked
         if (value) {
           const today = new Date();
           const endDate = new Date();
@@ -75,6 +68,7 @@ const DataForm = forwardRef(
 
           const updatedWithDates = {
             ...updatedObj,
+            repeat: "daily",
             startDate: today,
             endDate: endDate,
           };
@@ -86,6 +80,22 @@ const DataForm = forwardRef(
 
     function updateInputHandler(input, value) {
       const updatedObj = { ...dataCtx[editingObj], [input]: value };
+
+      if (input === "repeat" && value === "weekly" && !updatedObj.dayOfWeek) {
+        const dayNames = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        const today = new Date();
+        const todayName = dayNames[today.getDay()];
+        updatedObj.dayOfWeek = todayName;
+      }
+
       dataCtx[updateEditingObj](updatedObj);
     }
 
@@ -108,19 +118,15 @@ const DataForm = forwardRef(
     function formatDateForDisplay(date) {
       if (!date) return new Date();
 
-      // If it's already a Date object, return it
       if (date instanceof Date) return date;
 
-      // If it's a string, try to parse it
       if (typeof date === "string") {
         const parsedDate = new Date(date);
-        // Check if the parsed date is valid
         if (!isNaN(parsedDate.getTime())) {
           return parsedDate;
         }
       }
 
-      // Fallback to current date
       return new Date();
     }
 
@@ -150,85 +156,54 @@ const DataForm = forwardRef(
     function handleDeleteRecurringTask() {
       const currentTask = dataCtx[editingObj];
 
-      // Check if this is a parent recurring task
-      if (currentTask.isRecurring && !currentTask.parentTaskId) {
-        // Find all instances of this recurring task
-        const instances = dataCtx.tasks.filter(
-          (task) => task.parentTaskId === currentTask.id
-        );
-
-        if (instances.length > 0) {
-          setRecurringInstancesToDelete(instances);
-          setShowDeleteModal(true);
-        } else {
-          // No instances, just delete the parent
-          dataCtx.deleteRecurringTask(currentTask.id);
-          navigation.goBack();
-        }
-      } else if (currentTask.parentTaskId) {
-        // This is a recurring task instance
-        // Find the parent task
-        const parentTask = dataCtx.tasks.find(
-          (task) => task.id === currentTask.parentTaskId
-        );
-
-        if (parentTask) {
-          // Find all instances of this parent
-          const instances = dataCtx.tasks.filter(
-            (task) => task.parentTaskId === parentTask.id
-          );
-
-          if (instances.length > 1) {
-            // More than just this instance, ask about deleting all
-            setRecurringInstancesToDelete(instances);
-            setShowDeleteModal(true);
-          } else {
-            // Only this instance, delete the parent and all instances
-            dataCtx.deleteRecurringTask(parentTask.id);
-            navigation.goBack();
-          }
-        } else {
-          // Fallback: just delete this instance
-          dataCtx.deleteTask(currentTask.id);
-          navigation.goBack();
-        }
+      if (currentTask.isRecurring) {
+        setShowDeleteModal(true);
       } else {
-        // Regular task
         deleteHandler();
       }
     }
 
-    function deleteRecurringTaskWithInstances() {
+    function handleDeleteTask() {
+      // Show delete modal for confirmation
+      setShowDeleteModal(true);
+    }
+
+    function handleDeleteGoal() {
+      setShowDeleteModal(true);
+    }
+
+    function deleteRecurringTaskCompletely() {
       const currentTask = dataCtx[editingObj];
-
-      if (currentTask.isRecurring && !currentTask.parentTaskId) {
-        // Delete parent and all instances
-        dataCtx.deleteRecurringTask(currentTask.id);
-      } else if (currentTask.parentTaskId) {
-        // Delete parent and all instances
-        const parentTask = dataCtx.tasks.find(
-          (task) => task.id === currentTask.parentTaskId
-        );
-        if (parentTask) {
-          dataCtx.deleteRecurringTask(parentTask.id);
-        }
-      }
-
+      dataCtx.deleteRecurringTask(currentTask.id);
       setShowDeleteModal(false);
       navigation.goBack();
     }
 
-    function deleteRecurringTaskOnly() {
+    function deleteRecurringTaskInstance() {
       const currentTask = dataCtx[editingObj];
+      const today = new Date().toISOString().split("T")[0];
+      dataCtx.completeRecurringTask(currentTask.id, today);
+      setShowDeleteModal(false);
+      navigation.goBack();
+    }
 
-      if (currentTask.isRecurring && !currentTask.parentTaskId) {
-        // Delete only the parent, keep instances
-        dataCtx.deleteTask(currentTask.id);
-      } else if (currentTask.parentTaskId) {
-        // Delete only this instance
-        dataCtx.deleteTask(currentTask.id);
-      }
+    function deleteRegularTask() {
+      const currentTask = dataCtx[editingObj];
+      dataCtx.deleteTask(currentTask.id);
+      setShowDeleteModal(false);
+      navigation.goBack();
+    }
 
+    function deleteGoal() {
+      const currentGoal = dataCtx[editingObj];
+      dataCtx.deleteGoal(currentGoal.id);
+      setShowDeleteModal(false);
+      navigation.goBack();
+    }
+
+    function deleteGoalWithTasks() {
+      const currentGoal = dataCtx[editingObj];
+      dataCtx.deleteGoalWithTasks(currentGoal.id);
       setShowDeleteModal(false);
       navigation.goBack();
     }
@@ -270,9 +245,10 @@ const DataForm = forwardRef(
     function duplicateTaskHandler() {
       if (data !== "task") return;
 
-      const baseTitle = dataCtx[editingObj].title.replace(/\s\(\d+\)$/, "");
-      const similarTasks = dataCtx.tasks.filter((task) =>
-        task.title.startsWith(baseTitle)
+      const title = dataCtx[editingObj].title || "Untitled Task";
+      const baseTitle = title.replace(/\s\(\d+\)$/, "");
+      const similarTasks = dataCtx.allTasks.filter(
+        (task) => task.title && task.title.startsWith(baseTitle)
       );
 
       let maxNum = 0;
@@ -299,6 +275,9 @@ const DataForm = forwardRef(
 
     useImperativeHandle(ref, () => ({
       duplicateTask: duplicateTaskHandler,
+      handleDeleteRecurringTask: handleDeleteRecurringTask,
+      handleDeleteTask: handleDeleteTask,
+      handleDeleteGoal: handleDeleteGoal,
     }));
 
     return (
@@ -322,16 +301,14 @@ const DataForm = forwardRef(
                   placeholderTextColor="#999"
                   autoFocus={!dataCtx[editingObj].id}
                 />
-                {data === "task" &&
-                  (localIsRecurring ||
-                    Boolean(dataCtx[editingObj].parentTaskId)) && (
-                    <Feather
-                      name="repeat"
-                      size={20}
-                      color="#888"
-                      style={{ marginLeft: 8 }}
-                    />
-                  )}
+                {data === "task" && dataCtx[editingObj].isRecurring && (
+                  <Feather
+                    name="repeat"
+                    size={20}
+                    color="#888"
+                    style={{ marginLeft: 8 }}
+                  />
+                )}
               </View>
             </View>
             <View style={[styles.fieldGroup, styles.row]}>
@@ -406,31 +383,130 @@ const DataForm = forwardRef(
               updateDateHandler={updateDateHandler}
             />
 
-            {data === "task" && Boolean(dataCtx[editingObj].parentTaskId) && (
-              <View style={styles.fieldGroup}>
-                <View style={styles.recurringInfoContainer}>
-                  <Text style={styles.recurringInfoText}>
-                    This is a recurring task instance
-                  </Text>
-                  <Button
-                    title="Edit Parent Task"
-                    onPress={() => {
-                      const parentTask = dataCtx.tasks.find(
-                        (task) => task.id === dataCtx[editingObj].parentTaskId
-                      );
-                      if (parentTask) {
-                        navigation.navigate("TaskDetail", {
-                          taskId: parentTask.id,
-                        });
-                      }
-                    }}
-                    color="#4CAF50"
+            {data === "task" && dataCtx[editingObj].isRecurring && (
+              <>
+                <View style={styles.fieldGroup}>
+                  <View style={styles.recurringInfoContainer}>
+                    <Text style={styles.recurringInfoText}>
+                      This is a recurring task
+                    </Text>
+                    <Text style={styles.recurringInfoSubtext}>
+                      Completed dates:{" "}
+                      {dataCtx[editingObj].completedDates?.length || 0}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Repeat</Text>
+                  <View style={styles.repeatOptions}>
+                    <Pressable
+                      style={[
+                        styles.repeatOption,
+                        dataCtx[editingObj].repeat === "daily" &&
+                          styles.repeatOptionSelected,
+                      ]}
+                      onPress={() => updateInputHandler("repeat", "daily")}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatOptionText,
+                          dataCtx[editingObj].repeat === "daily" &&
+                            styles.repeatOptionTextSelected,
+                        ]}
+                      >
+                        Daily
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[
+                        styles.repeatOption,
+                        dataCtx[editingObj].repeat === "weekly" &&
+                          styles.repeatOptionSelected,
+                      ]}
+                      onPress={() => updateInputHandler("repeat", "weekly")}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatOptionText,
+                          dataCtx[editingObj].repeat === "weekly" &&
+                            styles.repeatOptionTextSelected,
+                        ]}
+                      >
+                        Weekly
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                {dataCtx[editingObj].repeat === "weekly" && (
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Day of Week</Text>
+                    <View style={styles.dayOptions}>
+                      {[
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                        "Sunday",
+                      ].map((day) => (
+                        <Pressable
+                          key={day}
+                          style={[
+                            styles.dayOption,
+                            dataCtx[editingObj].dayOfWeek === day &&
+                              styles.dayOptionSelected,
+                          ]}
+                          onPress={() => updateInputHandler("dayOfWeek", day)}
+                        >
+                          <Text
+                            style={[
+                              styles.dayOptionText,
+                              dataCtx[editingObj].dayOfWeek === day &&
+                                styles.dayOptionTextSelected,
+                            ]}
+                          >
+                            {day.slice(0, 3)}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Start Date</Text>
+                  <DateTimePicker
+                    value={formatDateForDisplay(dataCtx[editingObj].startDate)}
+                    mode="date"
+                    display="default"
+                    onChange={(event, date) =>
+                      updateRecurringDateHandler("startDate", event, date)
+                    }
+                    minimumDate={new Date()}
                   />
                 </View>
-              </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>End Date</Text>
+                  <DateTimePicker
+                    value={formatDateForDisplay(dataCtx[editingObj].endDate)}
+                    mode="date"
+                    display="default"
+                    onChange={(event, date) =>
+                      updateRecurringDateHandler("endDate", event, date)
+                    }
+                    minimumDate={formatDateForDisplay(
+                      dataCtx[editingObj].startDate
+                    )}
+                  />
+                </View>
+              </>
             )}
 
-            {data === "task" && !Boolean(dataCtx[editingObj].parentTaskId) && (
+            {data === "task" && !dataCtx[editingObj].isRecurring && (
               <>
                 <View style={styles.fieldGroup}>
                   <View style={styles.checkboxContainer}>
@@ -444,6 +520,48 @@ const DataForm = forwardRef(
 
                 {localIsRecurring && (
                   <>
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.label}>Repeat</Text>
+                      <View style={styles.repeatOptions}>
+                        <Pressable
+                          style={[
+                            styles.repeatOption,
+                            dataCtx[editingObj].repeat === "daily" &&
+                              styles.repeatOptionSelected,
+                          ]}
+                          onPress={() => updateInputHandler("repeat", "daily")}
+                        >
+                          <Text
+                            style={[
+                              styles.repeatOptionText,
+                              dataCtx[editingObj].repeat === "daily" &&
+                                styles.repeatOptionTextSelected,
+                            ]}
+                          >
+                            Daily
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          style={[
+                            styles.repeatOption,
+                            dataCtx[editingObj].repeat === "weekly" &&
+                              styles.repeatOptionSelected,
+                          ]}
+                          onPress={() => updateInputHandler("repeat", "weekly")}
+                        >
+                          <Text
+                            style={[
+                              styles.repeatOptionText,
+                              dataCtx[editingObj].repeat === "weekly" &&
+                                styles.repeatOptionTextSelected,
+                            ]}
+                          >
+                            Weekly
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+
                     <View style={styles.fieldGroup}>
                       <Text style={styles.label}>Start Date</Text>
                       <DateTimePicker
@@ -477,23 +595,6 @@ const DataForm = forwardRef(
                     </View>
                   </>
                 )}
-
-                {localIsRecurring && dataCtx[editingObj].id && (
-                  <View style={styles.fieldGroup}>
-                    <View style={styles.recurringInfoContainer}>
-                      <Text style={styles.recurringInfoText}>
-                        This recurring task has{" "}
-                        {
-                          dataCtx.tasks.filter(
-                            (task) =>
-                              task.parentTaskId === dataCtx[editingObj].id
-                          ).length
-                        }{" "}
-                        instances
-                      </Text>
-                    </View>
-                  </View>
-                )}
               </>
             )}
 
@@ -511,44 +612,23 @@ const DataForm = forwardRef(
             </View>
           </KeyboardAvoidingView>
         </ScrollView>
-
-        <View style={styles.buttonRow}>
-          {dataCtx[editingObj].id && (
-            <Button
-              title={`Delete ${capitalizeWords(data)}`}
-              onPress={() => {
-                if (
-                  data === "task" &&
-                  (dataCtx[editingObj].isRecurring ||
-                    dataCtx[editingObj].parentTaskId)
-                ) {
-                  handleDeleteRecurringTask();
-                } else {
-                  setShowDeleteModal(true);
-                }
-              }}
-              color="#e53935"
-            />
-          )}
-        </View>
-
         <DeleteModal
           visible={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
-          onDelete={() => {
-            deleteHandler();
-            setShowDeleteModal(false);
-          }}
-          onDeleteWithTasks={() => {
-            deleteGoalWithTasksHandler();
-            setShowDeleteModal(false);
-          }}
-          onDeleteRecurringWithInstances={deleteRecurringTaskWithInstances}
-          onDeleteRecurringOnly={deleteRecurringTaskOnly}
+          onDelete={
+            data === "goal"
+              ? deleteGoal
+              : dataCtx[editingObj].isRecurring
+              ? deleteRecurringTaskCompletely
+              : deleteRegularTask
+          }
+          onDeleteWithTasks={data === "goal" ? deleteGoalWithTasks : () => {}}
+          onDeleteRecurringWithInstances={deleteRecurringTaskCompletely}
+          onDeleteRecurringOnly={deleteRecurringTaskInstance}
           itemTitle={dataCtx[editingObj].title}
           itemType={data}
           tasksToDelete={tasksToDelete}
-          recurringInstancesToDelete={recurringInstancesToDelete}
+          isRecurring={dataCtx[editingObj].isRecurring}
         />
       </View>
     );
@@ -556,138 +636,159 @@ const DataForm = forwardRef(
 );
 
 export default DataForm;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#F8F9FA",
+  },
+  scrollContent: {
+    padding: 20,
   },
   keyboardAvoiding: {
     flex: 1,
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 50,
-  },
   fieldGroup: {
     marginBottom: 20,
-  },
-  label: {
-    fontWeight: "600",
-    fontSize: 16,
-    color: "#333",
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: "#f9f9f9",
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: "#111",
-  },
-  description: {
-    minHeight: 80,
-    textAlignVertical: "top",
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
   },
   flex: {
     flex: 1,
   },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  titleInput: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    paddingVertical: 8,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 8,
+  },
   statusBox: {
-    backgroundColor: "#eee",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    backgroundColor: "#E3F2FD",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 8,
-    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "#BBDEFB",
   },
   statusText: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1976D2",
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 24,
+    marginLeft: 16,
   },
   checkboxLabel: {
-    marginLeft: 6,
     fontSize: 14,
-    color: "#444",
+    color: "#1A1A1A",
+    marginLeft: 8,
   },
   progressContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   progressText: {
     fontSize: 14,
-    marginBottom: 6,
-    color: "#666",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 26,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderColor: "#eee",
-  },
-  recurringIndicator: {
-    color: "#666",
-    fontSize: 14,
-    fontStyle: "italic",
-  },
-  disabledText: {
-    color: "#999",
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    marginBottom: 20,
-  },
-  titleInput: {
-    flex: 1,
-    fontSize: 32,
-    fontWeight: 600,
-    color: "#000",
-    paddingVertical: 0,
+    color: "#1A1A1A",
+    marginBottom: 8,
   },
   recurringInfoContainer: {
-    backgroundColor: "#f0f8ff",
-    padding: 16,
+    backgroundColor: "#F3E5F5",
+    padding: 12,
     borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#4CAF50",
+    borderWidth: 1,
+    borderColor: "#E1BEE7",
   },
   recurringInfoText: {
     fontSize: 14,
-    color: "#666",
-    marginBottom: 12,
-    fontStyle: "italic",
+    fontWeight: "600",
+    color: "#7B1FA2",
   },
-  customCheckbox: {
-    width: 24,
-    height: 24,
+  recurringInfoSubtext: {
+    fontSize: 12,
+    color: "#9C27B0",
+    marginTop: 4,
+  },
+  repeatOptions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  repeatOption: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
+  },
+  repeatOptionSelected: {
+    backgroundColor: "#E3F2FD",
+    borderColor: "#2196F3",
+  },
+  repeatOptionText: {
+    fontSize: 14,
+    color: "#1A1A1A",
+    textAlign: "center",
+  },
+  repeatOptionTextSelected: {
+    color: "#1976D2",
+    fontWeight: "600",
+  },
+  dayOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  dayOption: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 6,
-    borderWidth: 2,
-    borderColor: "#555",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
+    minWidth: 40,
   },
-  customCheckboxChecked: {
-    backgroundColor: "#4caf50",
-    borderColor: "#4caf50",
+  dayOptionSelected: {
+    backgroundColor: "#E3F2FD",
+    borderColor: "#2196F3",
   },
-  checkmark: {
-    fontSize: 18,
-    color: "#fff",
+  dayOptionText: {
+    fontSize: 12,
+    color: "#1A1A1A",
+    textAlign: "center",
+  },
+  dayOptionTextSelected: {
+    color: "#1976D2",
+    fontWeight: "600",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    color: "#1A1A1A",
+    backgroundColor: "#FFFFFF",
+  },
+  description: {
+    minHeight: 80,
+    textAlignVertical: "top",
   },
 });

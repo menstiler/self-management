@@ -37,9 +37,40 @@ function DataDetail({
   }, [route.params?.duplicate]);
 
   useEffect(() => {
+    if (route.params?.deleteTask) {
+      const task = dataCtx.allTasks.find((task) => task.id === dataId);
+
+      setTimeout(() => {
+        if (dataFormRef.current) {
+          if (task && task.isRecurring) {
+            dataFormRef.current.handleDeleteRecurringTask();
+          } else {
+            dataFormRef.current.handleDeleteTask();
+          }
+        } else {
+          if (task && task.isRecurring) {
+            dataFormRef.current?.handleDeleteRecurringTask();
+          } else {
+            dataFormRef.current?.handleDeleteTask();
+          }
+        }
+      }, 100);
+
+      navigation.setParams({ deleteTask: undefined });
+    }
+  }, [route.params?.deleteTask]);
+
+  useEffect(() => {
+    if (route.params?.deleteGoal) {
+      dataFormRef.current?.handleDeleteGoal();
+      navigation.setParams({ deleteGoal: undefined });
+    }
+  }, [route.params?.deleteGoal]);
+
+  useEffect(() => {
     setLoading(true);
     if (dataId) {
-      const stateData = data === "task" ? "tasks" : "goals";
+      const stateData = data === "task" ? "allTasks" : "goals";
       const dataIndex = dataCtx[stateData].findIndex(
         (item) => item.id === dataId
       );
@@ -64,54 +95,9 @@ function DataDetail({
   }
 
   function saveItem() {
-    console.log("saveItem called");
-    console.log("data:", data);
-    console.log("editingObj:", dataCtx[editingObj]);
-    console.log("isRecurring:", dataCtx[editingObj].isRecurring);
-    console.log("parentTaskId:", dataCtx[editingObj].parentTaskId);
-    console.log("startDate:", dataCtx[editingObj].startDate);
-    console.log("endDate:", dataCtx[editingObj].endDate);
-
-    // Check if this is a recurring task (parent or instance)
-    if (
-      data === "task" &&
-      (dataCtx[editingObj].isRecurring || dataCtx[editingObj].parentTaskId)
-    ) {
-      console.log("Updating recurring task");
-      // Determine the parent task ID
-      const parentTaskId = dataCtx[editingObj].parentTaskId || dataId;
-      console.log("parentTaskId:", parentTaskId);
-
-      // When updating from an instance, filter out instance-specific properties
-      const updateData = { ...dataCtx[editingObj] };
-
-      // Remove instance-specific properties that shouldn't be copied to parent
-      if (dataCtx[editingObj].parentTaskId) {
-        console.log("Updating from instance");
-        delete updateData.date;
-        delete updateData.parentTaskId;
-        delete updateData.isRecurring;
-        delete updateData.id;
-      } else {
-        console.log("Updating parent task");
-        // When editing the parent task itself, ensure isRecurring is set to true
-        updateData.isRecurring = true;
-
-        // Ensure startDate and endDate are set for parent tasks
-        if (!updateData.startDate) {
-          updateData.startDate = new Date();
-        }
-        if (!updateData.endDate) {
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + 7);
-          updateData.endDate = endDate;
-        }
-      }
-
-      console.log("updateData:", updateData);
-      dataCtx.updateRecurringTask(parentTaskId, updateData);
+    if (data === "task" && dataCtx[editingObj].isRecurring) {
+      dataCtx.updateRecurringTask(dataId, dataCtx[editingObj]);
     } else {
-      console.log("Updating regular task");
       dataCtx[updateObj](dataId, dataCtx[editingObj]);
     }
     setItem(dataCtx[editingObj]);

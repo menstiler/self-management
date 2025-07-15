@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function DropdownMenu({ onDuplicate }) {
+export default function DropdownMenu({ onDuplicate, onDelete }) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -42,6 +42,14 @@ export default function DropdownMenu({ onDuplicate }) {
               onPress={() => {
                 setVisible(false);
                 onDuplicate();
+              }}
+            />
+            <Button
+              title="Delete Task"
+              color="red"
+              onPress={() => {
+                setVisible(false);
+                onDelete();
               }}
             />
           </View>

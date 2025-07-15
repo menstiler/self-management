@@ -9,9 +9,11 @@ export default class Task {
     status,
     goals,
     isRecurring = false,
+    repeat = null,
+    dayOfWeek = null,
     startDate = null,
     endDate = null,
-    parentTaskId = null,
+    completedDates = [],
   }) {
     this.id = id;
     this.title = title;
@@ -22,8 +24,10 @@ export default class Task {
     this.status = status;
     this.goals = goals;
     this.isRecurring = isRecurring;
+    this.repeat = repeat;
+    this.dayOfWeek = dayOfWeek;
     this.startDate = startDate;
     this.endDate = endDate;
-    this.parentTaskId = parentTaskId;
+    this.completedDates = completedDates;
   }
 }

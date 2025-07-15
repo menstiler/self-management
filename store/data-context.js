@@ -1,49 +1,12 @@
 import { createContext, useReducer } from "react";
 import Task from "../models/task";
 import Goal from "../models/goal";
-
-// Helper function to generate dates between start and end date
-function generateDateRange(startDate, endDate) {
-  const dates = [];
-  const currentDate = new Date(startDate);
-  const end = new Date(endDate);
-
-  while (currentDate <= end) {
-    dates.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  return dates;
-}
-
-// Helper function to create recurring task instances
-function createRecurringTaskInstances(parentTask, startDate, endDate) {
-  const dates = generateDateRange(startDate, endDate);
-  return dates.map((date) => {
-    const taskId = Math.random();
-    return new Task({
-      id: taskId,
-      title: parentTask.title,
-      duration: parentTask.duration,
-      description: parentTask.description,
-      priority: parentTask.priority,
-      status: parentTask.status,
-      goals: parentTask.goals,
-      date: date.toISOString().split("T")[0], // Format as YYYY-MM-DD
-      parentTaskId: parentTask.id,
-      isRecurring: false, // This is an instance, not the parent
-    });
-  });
-}
-
-// Helper function to get recurring task instances for a specific date
-function getRecurringTasksForDate(tasks, targetDate) {
-  return tasks.filter((task) => task.parentTaskId && task.date === targetDate);
-}
-
-// Helper function to get parent recurring tasks
-function getParentRecurringTasks(tasks) {
-  return tasks.filter((task) => task.isRecurring);
-}
+import {
+  getTodayString,
+  getNextDueDate,
+  shouldShowRecurringTaskToday,
+  getDisplayDateForRecurringTask,
+} from "../util/task";
 
 export const DataContext = createContext({
   tasks: [],
@@ -55,6 +18,8 @@ export const DataContext = createContext({
     description,
     goals,
     isRecurring,
+    repeat,
+    dayOfWeek,
     startDate,
     endDate,
   }) => {},
@@ -70,6 +35,8 @@ export const DataContext = createContext({
       description,
       goals,
       isRecurring,
+      repeat,
+      dayOfWeek,
       startDate,
       endDate,
     }
@@ -80,14 +47,28 @@ export const DataContext = createContext({
     priority,
     description,
     goals,
+    repeat,
+    dayOfWeek,
     startDate,
     endDate,
   }) => {},
-  deleteRecurringTask: (parentTaskId) => {},
+  deleteRecurringTask: (taskId) => {},
   updateRecurringTask: (
-    parentTaskId,
-    { title, duration, priority, description, goals, startDate, endDate }
+    taskId,
+    {
+      title,
+      duration,
+      priority,
+      description,
+      goals,
+      repeat,
+      dayOfWeek,
+      startDate,
+      endDate,
+    }
   ) => {},
+  completeRecurringTask: (taskId, date) => {},
+  deleteRecurringInstance: (taskId, date) => {},
   goals: [],
   addGoal: ({
     id,
@@ -117,6 +98,8 @@ export const DataContext = createContext({
     trackTaskStatus,
     goals,
     isRecurring,
+    repeat,
+    dayOfWeek,
     startDate,
     endDate,
   }) => {},
@@ -150,57 +133,41 @@ function dataReducer(state, action) {
         goals: updatedGoalsWithNewTask,
       };
     case "ADD_RECURRING_TASK":
-      // Create parent recurring task
-      const parentTaskId = Math.random();
-      const parentTask = new Task({
-        id: parentTaskId,
+      // Create recurring task with metadata
+      const recurringTaskId = Math.random();
+      const recurringTask = new Task({
+        id: recurringTaskId,
         ...action.payload,
         isRecurring: true,
+        repeat: action.payload.repeat || "daily",
+        dayOfWeek: action.payload.dayOfWeek || null,
         startDate: action.payload.startDate,
         endDate: action.payload.endDate,
+        completedDates: [],
       });
 
-      // Create daily instances
-      const recurringInstances = createRecurringTaskInstances(
-        parentTask,
-        action.payload.startDate,
-        action.payload.endDate
-      );
-
-      // Update goals with all new task instances
-      const updatedGoalsWithRecurringTasks = state.goals.map((goal) => {
-        if (parentTask.goals && parentTask.goals.includes(goal.id)) {
-          const allTaskIds = [
-            parentTask.id,
-            ...recurringInstances.map((task) => task.id),
-          ];
-          return { ...goal, tasks: [...(goal.tasks || []), ...allTaskIds] };
+      // Update goals with the recurring task
+      const updatedGoalsWithRecurringTask = state.goals.map((goal) => {
+        if (recurringTask.goals && recurringTask.goals.includes(goal.id)) {
+          return { ...goal, tasks: [...(goal.tasks || []), recurringTask.id] };
         }
         return goal;
       });
 
       return {
         ...state,
-        tasks: [parentTask, ...recurringInstances, ...state.tasks],
-        goals: updatedGoalsWithRecurringTasks,
+        tasks: [recurringTask, ...state.tasks],
+        goals: updatedGoalsWithRecurringTask,
       };
     case "DELETE_RECURRING_TASK":
-      // Delete parent task and all its instances
+      // Delete the recurring task completely
       const tasksAfterRecurringDelete = state.tasks.filter(
-        (task) =>
-          task.id !== action.payload && task.parentTaskId !== action.payload
+        (task) => task.id !== action.payload
       );
 
       const updatedGoalsAfterRecurringDelete = state.goals.map((goal) => ({
         ...goal,
-        tasks: (goal.tasks || []).filter(
-          (taskId) =>
-            taskId !== action.payload &&
-            !state.tasks.find(
-              (task) =>
-                task.id === taskId && task.parentTaskId === action.payload
-            )
-        ),
+        tasks: (goal.tasks || []).filter((taskId) => taskId !== action.payload),
       }));
 
       return {
@@ -209,68 +176,80 @@ function dataReducer(state, action) {
         goals: updatedGoalsAfterRecurringDelete,
       };
     case "UPDATE_RECURRING_TASK":
-      console.log("UPDATE_RECURRING_TASK reducer called");
-      console.log("action.payload:", action.payload);
-
-      // Find parent task
-      const parentTaskIndex = state.tasks.findIndex(
-        (task) => task.id === action.payload.parentTaskId
+      // Update the recurring task metadata
+      const recurringTaskIndex = state.tasks.findIndex(
+        (task) => task.id === action.payload.taskId
       );
 
-      console.log("parentTaskIndex:", parentTaskIndex);
+      if (recurringTaskIndex === -1) return state;
 
-      if (parentTaskIndex === -1) {
-        console.log("Parent task not found, returning state");
-        return state;
-      }
-
-      const parentTaskToUpdate = state.tasks[parentTaskIndex];
-      console.log("parentTaskToUpdate:", parentTaskToUpdate);
-
-      const updatedParentTask = {
-        ...parentTaskToUpdate,
+      const taskToUpdate = state.tasks[recurringTaskIndex];
+      const updatedRecurringTask = {
+        ...taskToUpdate,
         ...action.payload.data,
-        isRecurring: true, // Ensure parent remains recurring
+        isRecurring: true, // Ensure it remains recurring
       };
 
-      console.log("updatedParentTask:", updatedParentTask);
-
-      // Delete old instances
-      const tasksWithoutOldInstances = state.tasks.filter(
-        (task) => task.parentTaskId !== action.payload.parentTaskId
-      );
-
-      console.log(
-        "tasksWithoutOldInstances count:",
-        tasksWithoutOldInstances.length
-      );
-
-      // Create new instances
-      const newRecurringInstances = createRecurringTaskInstances(
-        updatedParentTask,
-        action.payload.data.startDate,
-        action.payload.data.endDate
-      );
-
-      console.log("newRecurringInstances count:", newRecurringInstances.length);
-
-      // Update parent task
-      const updatedTasksWithNewParent = [...tasksWithoutOldInstances];
-      updatedTasksWithNewParent[parentTaskIndex] = updatedParentTask;
-
-      const finalTasks = [
-        updatedParentTask,
-        ...newRecurringInstances,
-        ...tasksWithoutOldInstances.filter(
-          (task) => task.id !== updatedParentTask.id
-        ),
-      ];
-
-      console.log("finalTasks count:", finalTasks.length);
+      const updatedTasks = [...state.tasks];
+      updatedTasks[recurringTaskIndex] = updatedRecurringTask;
 
       return {
         ...state,
-        tasks: finalTasks,
+        tasks: updatedTasks,
+      };
+    case "COMPLETE_RECURRING_TASK":
+      // Mark a specific date as completed
+      const taskToCompleteIndex = state.tasks.findIndex(
+        (task) => task.id === action.payload.taskId
+      );
+
+      if (taskToCompleteIndex === -1) return state;
+
+      const taskToComplete = state.tasks[taskToCompleteIndex];
+      const updatedCompletedDates = [...taskToComplete.completedDates];
+
+      if (!updatedCompletedDates.includes(action.payload.date)) {
+        updatedCompletedDates.push(action.payload.date);
+      }
+
+      const completedTask = {
+        ...taskToComplete,
+        completedDates: updatedCompletedDates,
+      };
+
+      const updatedTasksAfterComplete = [...state.tasks];
+      updatedTasksAfterComplete[taskToCompleteIndex] = completedTask;
+
+      return {
+        ...state,
+        tasks: updatedTasksAfterComplete,
+      };
+    case "DELETE_RECURRING_INSTANCE":
+      // Delete a specific instance (date) from the recurring task
+      const taskToDeleteInstanceIndex = state.tasks.findIndex(
+        (task) => task.id === action.payload.taskId
+      );
+
+      if (taskToDeleteInstanceIndex === -1) return state;
+
+      const taskToDeleteInstance = state.tasks[taskToDeleteInstanceIndex];
+      const updatedCompletedDatesAfterDelete =
+        taskToDeleteInstance.completedDates.filter(
+          (date) => date !== action.payload.date
+        );
+
+      const taskAfterInstanceDelete = {
+        ...taskToDeleteInstance,
+        completedDates: updatedCompletedDatesAfterDelete,
+      };
+
+      const updatedTasksAfterInstanceDelete = [...state.tasks];
+      updatedTasksAfterInstanceDelete[taskToDeleteInstanceIndex] =
+        taskAfterInstanceDelete;
+
+      return {
+        ...state,
+        tasks: updatedTasksAfterInstanceDelete,
       };
     case "SET_TASKS":
       const tasks = action.payload.map((task) => new Task(task));
@@ -281,6 +260,28 @@ function dataReducer(state, action) {
       );
       const updatableTask = state.tasks[updatableTaskIndex];
       const updatedTaskItem = { ...updatableTask, ...action.payload.data };
+
+      // Handle recurring task completion tracking
+      if (updatableTask.isRecurring) {
+        const today = getTodayString();
+
+        if (action.payload.data.status === "done") {
+          // When status becomes "done", add today to completed dates
+          if (!updatedTaskItem.completedDates.includes(today)) {
+            updatedTaskItem.completedDates = [
+              ...updatedTaskItem.completedDates,
+              today,
+            ];
+          }
+        } else if (
+          updatableTask.status === "done" &&
+          action.payload.data.status !== "done"
+        ) {
+          // When status changes from "done" to something else, remove today from completed dates
+          updatedTaskItem.completedDates =
+            updatedTaskItem.completedDates.filter((date) => date !== today);
+        }
+      }
 
       const oldGoalIds = new Set(updatableTask.goals || []);
       const newGoalIds = new Set(updatedTaskItem.goals || []);
@@ -323,6 +324,7 @@ function dataReducer(state, action) {
         tasks: updatedTasksAfterDelete,
         goals: updatedGoalsAfterTaskDelete,
       };
+
     case "ADD_GOAL":
       // TODO use id from db
       const goalId = Math.random();
@@ -341,7 +343,7 @@ function dataReducer(state, action) {
       const oldTaskIds = new Set(updatableGoal.tasks || []);
       const newTaskIds = new Set(updatedGoalItem.tasks || []);
 
-      const updatedTasks = state.tasks.map((task) => {
+      const updatedTasksForGoal = state.tasks.map((task) => {
         if (newTaskIds.has(task.id) && !oldTaskIds.has(task.id)) {
           return { ...task, goals: [...(task.goals || []), updatableGoal.id] };
         }
@@ -360,7 +362,7 @@ function dataReducer(state, action) {
 
       const updatableGoals = [...state.goals];
       updatableGoals[updatableGoalIndex] = updatedGoalItem;
-      return { ...state, goals: updatableGoals, tasks: updatedTasks };
+      return { ...state, goals: updatableGoals, tasks: updatedTasksForGoal };
     case "DELETE_GOAL":
       const updatedGoalsAfterDelete = state.goals.filter(
         (goal) => goal.id !== action.payload
@@ -441,17 +443,28 @@ function DataContextProvider({ children }) {
     dispatch({ type: "ADD_RECURRING_TASK", payload: recurringTaskData });
   }
 
-  function deleteRecurringTask(parentTaskId) {
-    dispatch({ type: "DELETE_RECURRING_TASK", payload: parentTaskId });
+  function deleteRecurringTask(taskId) {
+    dispatch({ type: "DELETE_RECURRING_TASK", payload: taskId });
   }
 
-  function updateRecurringTask(parentTaskId, recurringTaskData) {
-    console.log("updateRecurringTask called");
-    console.log("parentTaskId:", parentTaskId);
-    console.log("recurringTaskData:", recurringTaskData);
+  function updateRecurringTask(taskId, recurringTaskData) {
     dispatch({
       type: "UPDATE_RECURRING_TASK",
-      payload: { parentTaskId, data: recurringTaskData },
+      payload: { taskId, data: recurringTaskData },
+    });
+  }
+
+  function completeRecurringTask(taskId, date) {
+    dispatch({
+      type: "COMPLETE_RECURRING_TASK",
+      payload: { taskId, date },
+    });
+  }
+
+  function deleteRecurringInstance(taskId, date) {
+    dispatch({
+      type: "DELETE_RECURRING_INSTANCE",
+      payload: { taskId, date },
     });
   }
 
@@ -476,7 +489,8 @@ function DataContextProvider({ children }) {
       type: "UPDATE_EDITING_TASK",
       payload: editingTaskData,
     });
-    if (editingTaskData.id) {
+    // Only update regular tasks during editing, not recurring tasks
+    if (editingTaskData.id && !editingTaskData.isRecurring) {
       updateTask(editingTaskData.id, editingTaskData);
     }
   }
@@ -498,8 +512,30 @@ function DataContextProvider({ children }) {
     });
   }
 
+  // Helper function to get tasks for display (including recurring tasks)
+  function getDisplayTasks() {
+    return state.tasks
+      .map((task) => {
+        if (task.isRecurring) {
+          const displayDate = getDisplayDateForRecurringTask(task);
+          return {
+            ...task,
+            date: displayDate,
+            // Only show if there's a due date today
+            shouldShow: shouldShowRecurringTaskToday(task),
+          };
+        }
+        return {
+          ...task,
+          shouldShow: true,
+        };
+      })
+      .filter((task) => task.shouldShow);
+  }
+
   const value = {
-    tasks: state.tasks,
+    tasks: getDisplayTasks(),
+    allTasks: state.tasks, // For internal use
     addTask,
     setTasks,
     deleteTask,
@@ -507,9 +543,12 @@ function DataContextProvider({ children }) {
     addRecurringTask,
     deleteRecurringTask,
     updateRecurringTask,
-    getRecurringTasksForDate: (targetDate) =>
-      getRecurringTasksForDate(state.tasks, targetDate),
-    getParentRecurringTasks: () => getParentRecurringTasks(state.tasks),
+    completeRecurringTask,
+    deleteRecurringInstance,
+    getNextDueDate: (task) => getNextDueDate(task),
+    shouldShowRecurringTaskToday: (task) => shouldShowRecurringTaskToday(task),
+    getDisplayDateForRecurringTask: (task) =>
+      getDisplayDateForRecurringTask(task),
     goals: state.goals,
     addGoal,
     setGoals,
