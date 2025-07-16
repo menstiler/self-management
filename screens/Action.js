@@ -11,6 +11,7 @@ import {
 import { capitalizeWords } from "../util/task";
 import { useContext } from "react";
 import { DataContext } from "../store/data-context";
+import ReccuringInputs from "../components/form/ReccuringInputs";
 
 function Action({ navigation, route }) {
   const dataCtx = useContext(DataContext);
@@ -160,6 +161,14 @@ function Action({ navigation, route }) {
           data="tasks"
           editingObj="editingGoal"
           updateEditingObj="updateEditingGoal"
+        />
+      );
+    case "recurring":
+      return (
+        <ReccuringInputs
+          dataCtx={dataCtx}
+          editingObj="editingTask"
+          updateEditingObj="updateEditingTask"
         />
       );
     default:

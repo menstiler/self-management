@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { DataContext } from "../store/data-context.js";
-import { capitalizeWords } from "../util/task.js";
+import { capitalizeWords, formatDateForDisplay } from "../util/task.js";
 import DateField from "./form/DateField";
 import PriorityField from "./form/PriorityField";
 import DurationField from "./form/DurationField";
@@ -27,7 +27,6 @@ import DeleteModal from "./form/DeleteModal";
 import Checkbox from "expo-checkbox";
 import * as Progress from "react-native-progress";
 import { useGoalMeta } from "../hooks/useGoalMeta";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 
 const DataForm = forwardRef(
@@ -80,22 +79,6 @@ const DataForm = forwardRef(
 
     function updateInputHandler(input, value) {
       const updatedObj = { ...dataCtx[editingObj], [input]: value };
-
-      if (input === "repeat" && value === "weekly" && !updatedObj.dayOfWeek) {
-        const dayNames = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ];
-        const today = new Date();
-        const todayName = dayNames[today.getDay()];
-        updatedObj.dayOfWeek = todayName;
-      }
-
       dataCtx[updateEditingObj](updatedObj);
     }
 
@@ -104,30 +87,6 @@ const DataForm = forwardRef(
         ...dataCtx[editingObj],
         [data === "task" ? "date" : "deadline"]: date,
       });
-    }
-
-    function updateRecurringDateHandler(field, event, date) {
-      if (date) {
-        dataCtx[updateEditingObj]({
-          ...dataCtx[editingObj],
-          [field]: date,
-        });
-      }
-    }
-
-    function formatDateForDisplay(date) {
-      if (!date) return new Date();
-
-      if (date instanceof Date) return date;
-
-      if (typeof date === "string") {
-        const parsedDate = new Date(date);
-        if (!isNaN(parsedDate.getTime())) {
-          return parsedDate;
-        }
-      }
-
-      return new Date();
     }
 
     function updateDurationHandler(input, value) {
@@ -384,7 +343,7 @@ const DataForm = forwardRef(
             />
 
             {data === "task" && dataCtx[editingObj].isRecurring && (
-              <>
+              <Pressable onPress={() => openAction("recurring")}>
                 <View style={styles.fieldGroup}>
                   <View style={styles.recurringInfoContainer}>
                     <Text style={styles.recurringInfoText}>
@@ -396,114 +355,7 @@ const DataForm = forwardRef(
                     </Text>
                   </View>
                 </View>
-
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Repeat</Text>
-                  <View style={styles.repeatOptions}>
-                    <Pressable
-                      style={[
-                        styles.repeatOption,
-                        dataCtx[editingObj].repeat === "daily" &&
-                          styles.repeatOptionSelected,
-                      ]}
-                      onPress={() => updateInputHandler("repeat", "daily")}
-                    >
-                      <Text
-                        style={[
-                          styles.repeatOptionText,
-                          dataCtx[editingObj].repeat === "daily" &&
-                            styles.repeatOptionTextSelected,
-                        ]}
-                      >
-                        Daily
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      style={[
-                        styles.repeatOption,
-                        dataCtx[editingObj].repeat === "weekly" &&
-                          styles.repeatOptionSelected,
-                      ]}
-                      onPress={() => updateInputHandler("repeat", "weekly")}
-                    >
-                      <Text
-                        style={[
-                          styles.repeatOptionText,
-                          dataCtx[editingObj].repeat === "weekly" &&
-                            styles.repeatOptionTextSelected,
-                        ]}
-                      >
-                        Weekly
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-
-                {dataCtx[editingObj].repeat === "weekly" && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Day of Week</Text>
-                    <View style={styles.dayOptions}>
-                      {[
-                        "Monday",
-                        "Tuesday",
-                        "Wednesday",
-                        "Thursday",
-                        "Friday",
-                        "Saturday",
-                        "Sunday",
-                      ].map((day) => (
-                        <Pressable
-                          key={day}
-                          style={[
-                            styles.dayOption,
-                            dataCtx[editingObj].dayOfWeek === day &&
-                              styles.dayOptionSelected,
-                          ]}
-                          onPress={() => updateInputHandler("dayOfWeek", day)}
-                        >
-                          <Text
-                            style={[
-                              styles.dayOptionText,
-                              dataCtx[editingObj].dayOfWeek === day &&
-                                styles.dayOptionTextSelected,
-                            ]}
-                          >
-                            {day.slice(0, 3)}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Start Date</Text>
-                  <DateTimePicker
-                    value={formatDateForDisplay(dataCtx[editingObj].startDate)}
-                    mode="date"
-                    display="default"
-                    onChange={(event, date) =>
-                      updateRecurringDateHandler("startDate", event, date)
-                    }
-                    minimumDate={new Date()}
-                  />
-                </View>
-
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>End Date</Text>
-                  <DateTimePicker
-                    value={formatDateForDisplay(dataCtx[editingObj].endDate)}
-                    mode="date"
-                    display="default"
-                    onChange={(event, date) =>
-                      updateRecurringDateHandler("endDate", event, date)
-                    }
-                    minimumDate={formatDateForDisplay(
-                      dataCtx[editingObj].startDate
-                    )}
-                  />
-                </View>
-              </>
+              </Pressable>
             )}
 
             {data === "task" && !dataCtx[editingObj].isRecurring && (
@@ -517,84 +369,6 @@ const DataForm = forwardRef(
                     <Text style={styles.checkboxLabel}>Recurring Task</Text>
                   </View>
                 </View>
-
-                {localIsRecurring && (
-                  <>
-                    <View style={styles.fieldGroup}>
-                      <Text style={styles.label}>Repeat</Text>
-                      <View style={styles.repeatOptions}>
-                        <Pressable
-                          style={[
-                            styles.repeatOption,
-                            dataCtx[editingObj].repeat === "daily" &&
-                              styles.repeatOptionSelected,
-                          ]}
-                          onPress={() => updateInputHandler("repeat", "daily")}
-                        >
-                          <Text
-                            style={[
-                              styles.repeatOptionText,
-                              dataCtx[editingObj].repeat === "daily" &&
-                                styles.repeatOptionTextSelected,
-                            ]}
-                          >
-                            Daily
-                          </Text>
-                        </Pressable>
-                        <Pressable
-                          style={[
-                            styles.repeatOption,
-                            dataCtx[editingObj].repeat === "weekly" &&
-                              styles.repeatOptionSelected,
-                          ]}
-                          onPress={() => updateInputHandler("repeat", "weekly")}
-                        >
-                          <Text
-                            style={[
-                              styles.repeatOptionText,
-                              dataCtx[editingObj].repeat === "weekly" &&
-                                styles.repeatOptionTextSelected,
-                            ]}
-                          >
-                            Weekly
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </View>
-
-                    <View style={styles.fieldGroup}>
-                      <Text style={styles.label}>Start Date</Text>
-                      <DateTimePicker
-                        value={formatDateForDisplay(
-                          dataCtx[editingObj].startDate
-                        )}
-                        mode="date"
-                        display="default"
-                        onChange={(event, date) =>
-                          updateRecurringDateHandler("startDate", event, date)
-                        }
-                        minimumDate={new Date()}
-                      />
-                    </View>
-
-                    <View style={styles.fieldGroup}>
-                      <Text style={styles.label}>End Date</Text>
-                      <DateTimePicker
-                        value={formatDateForDisplay(
-                          dataCtx[editingObj].endDate
-                        )}
-                        mode="date"
-                        display="default"
-                        onChange={(event, date) =>
-                          updateRecurringDateHandler("endDate", event, date)
-                        }
-                        minimumDate={formatDateForDisplay(
-                          dataCtx[editingObj].startDate
-                        )}
-                      />
-                    </View>
-                  </>
-                )}
               </>
             )}
 
@@ -747,33 +521,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   repeatOptionTextSelected: {
-    color: "#1976D2",
-    fontWeight: "600",
-  },
-  dayOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-  },
-  dayOption: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
-    minWidth: 40,
-  },
-  dayOptionSelected: {
-    backgroundColor: "#E3F2FD",
-    borderColor: "#2196F3",
-  },
-  dayOptionText: {
-    fontSize: 12,
-    color: "#1A1A1A",
-    textAlign: "center",
-  },
-  dayOptionTextSelected: {
     color: "#1976D2",
     fontWeight: "600",
   },

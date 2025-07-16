@@ -123,3 +123,18 @@ export function getDisplayDateForRecurringTask(task) {
   const nextDueDate = getNextDueDate(task);
   return nextDueDate || task.date;
 }
+
+export function formatDateForDisplay(date) {
+  if (!date) return new Date();
+
+  if (date instanceof Date) return date;
+
+  if (typeof date === "string") {
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate;
+    }
+  }
+
+  return new Date();
+}
