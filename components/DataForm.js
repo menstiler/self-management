@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
   forwardRef,
   useCallback,
+  useRef,
 } from "react";
 import {
   TextInput,
@@ -17,17 +18,19 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import * as Progress from "react-native-progress";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Feather } from "@expo/vector-icons";
+import Checkbox from "expo-checkbox";
 import { DataContext } from "../store/data-context.js";
+import { useGoalMeta } from "../hooks/useGoalMeta";
 import { capitalizeWords, formatDateForDisplay } from "../util/task.js";
 import DateField from "./form/DateField";
 import PriorityField from "./form/PriorityField";
 import DurationField from "./form/DurationField";
 import RelationshipField from "./form/RelationshipField";
 import DeleteModal from "./form/DeleteModal";
-import Checkbox from "expo-checkbox";
-import * as Progress from "react-native-progress";
-import { useGoalMeta } from "../hooks/useGoalMeta";
-import { Feather } from "@expo/vector-icons";
+import Action from "./Action";
 
 const DataForm = forwardRef(
   (
@@ -46,6 +49,8 @@ const DataForm = forwardRef(
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [tasksToDelete, setTasksToDelete] = useState([]);
     const [localIsRecurring, setLocalIsRecurring] = useState(false);
+    const [actionType, setActionType] = useState(null);
+    const sheetRef = useRef(null);
 
     useEffect(() => {
       if (data === "task") {
@@ -98,9 +103,10 @@ const DataForm = forwardRef(
     }
 
     function openAction(action) {
-      navigation.navigate("Action", {
-        action: action,
-      });
+      if (sheetRef.current) {
+        sheetRef.current?.snapToIndex(0);
+        setActionType(action);
+      }
     }
 
     function deleteHandler() {
@@ -269,199 +275,210 @@ const DataForm = forwardRef(
     };
 
     return (
-      <View style={styles.container}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            style={styles.keyboardAvoiding}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
-            <View style={styles.fieldGroup}>
-              <View style={styles.titleContainer}>
-                <TextInput
-                  style={styles.titleInput}
-                  onChangeText={(value) => updateInputHandler("title", value)}
-                  value={dataCtx[editingObj].title}
-                  placeholder="New task"
-                  placeholderTextColor="#999"
-                  autoFocus={!dataCtx[editingObj].id}
-                />
-                {data === "task" && dataCtx[editingObj].isRecurring && (
-                  <Feather
-                    name="repeat"
-                    size={20}
-                    color="#888"
-                    style={{ marginLeft: 8 }}
-                  />
-                )}
-              </View>
-            </View>
-            <View style={[styles.fieldGroup, styles.row]}>
-              <View style={styles.flex}>
-                <Text style={styles.label}>Status</Text>
-                <Pressable
-                  style={styles.statusBox}
-                  onPress={() => {
-                    if (data === "goal" && dataCtx[editingObj].trackTaskStatus)
-                      return;
-                    openAction(data === "task" ? "task-status" : "goal-status");
-                  }}
-                >
-                  <Text style={styles.statusText}>
-                    {capitalizeWords(dataCtx[editingObj].status)}
-                  </Text>
-                </Pressable>
-              </View>
-
-              {data === "goal" && (
-                <View style={styles.checkboxContainer}>
-                  <Checkbox
-                    value={dataCtx[editingObj].trackTaskStatus}
-                    onValueChange={(value) =>
-                      updateInputHandler("trackTaskStatus", value)
-                    }
-                  />
-                  <Text style={styles.checkboxLabel}>Track Task Status</Text>
-                </View>
-              )}
-            </View>
-            {data === "goal" && (
-              <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>
-                  Progress: {Math.round(dataCtx[editingObj].progress)}%
-                </Text>
-                <Progress.Bar
-                  progress={dataCtx[editingObj].progress / 100}
-                  width={null}
-                  height={10}
-                  color="#4caf50"
-                  unfilledColor="#e0e0e0"
-                  borderWidth={0}
-                  borderRadius={8}
-                />
-              </View>
-            )}
-            <RelationshipField
-              hasManyRelationship={hasManyRelationship}
-              dataCtx={dataCtx}
-              editingObj={editingObj}
-              updateEditingObj={updateEditingObj}
-              openAction={openAction}
-            />
-            {data === "task" && (
-              <>
-                <PriorityField
-                  value={dataCtx[editingObj].priority}
-                  updateInputHandler={updateInputHandler}
-                />
-                <DurationField
-                  durationValue={dataCtx[editingObj].duration}
-                  updateDurationHandler={updateDurationHandler}
-                />
-              </>
-            )}
-            <DateField
-              data={data}
-              value={formatDateForDisplay(
-                dataCtx[editingObj][data === "task" ? "date" : "deadline"]
-              )}
-              updateDateHandler={updateDateHandler}
-            />
-
-            {data === "task" && dataCtx[editingObj].isRecurring && (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={styles.keyboardAvoiding}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+            >
               <View style={styles.fieldGroup}>
-                <View style={styles.recurringInfoContainer}>
-                  <View style={styles.recurringInfoRow}>
-                    <Pressable
-                      style={styles.recurringInfoContent}
-                      onPress={() => openAction("recurring")}
-                    >
-                      <Text style={styles.recurringInfoText}>
-                        This task repeats{" "}
-                        {formatRepeat(dataCtx[editingObj].repeat)}
-                      </Text>
-                      <Text style={styles.recurringInfoSubtext}>
-                        Completed dates:{" "}
-                        {dataCtx[editingObj].completedDates?.length || 0}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.removeRecurringButton}
-                      onPress={() => {
-                        const updatedObj = {
-                          ...dataCtx[editingObj],
-                          isRecurring: false,
-                          repeat: null,
-                          dayOfWeek: null,
-                          startDate: null,
-                          endDate: null,
-                          completedDates: [],
-                        };
-                        dataCtx[updateEditingObj](updatedObj);
-                        setLocalIsRecurring(false);
-                      }}
-                    >
-                      <Feather
-                        name="x"
-                        size={20}
-                        color="#9C27B0"
-                      />
-                    </Pressable>
-                  </View>
+                <View style={styles.titleContainer}>
+                  <TextInput
+                    style={styles.titleInput}
+                    onChangeText={(value) => updateInputHandler("title", value)}
+                    value={dataCtx[editingObj].title}
+                    placeholder="New task"
+                    placeholderTextColor="#999"
+                    autoFocus={!dataCtx[editingObj].id}
+                  />
+                  {data === "task" && dataCtx[editingObj].isRecurring && (
+                    <Feather
+                      name="repeat"
+                      size={20}
+                      color="#888"
+                      style={{ marginLeft: 8 }}
+                    />
+                  )}
                 </View>
               </View>
-            )}
+              <View style={[styles.fieldGroup, styles.row]}>
+                <View style={styles.flex}>
+                  <Text style={styles.label}>Status</Text>
+                  <Pressable
+                    style={styles.statusBox}
+                    onPress={() => {
+                      if (
+                        data === "goal" &&
+                        dataCtx[editingObj].trackTaskStatus
+                      )
+                        return;
+                      openAction(
+                        data === "task" ? "task-status" : "goal-status"
+                      );
+                    }}
+                  >
+                    <Text style={styles.statusText}>
+                      {capitalizeWords(dataCtx[editingObj].status)}
+                    </Text>
+                  </Pressable>
+                </View>
 
-            {data === "task" && !dataCtx[editingObj].isRecurring && (
-              <>
-                <View style={styles.fieldGroup}>
+                {data === "goal" && (
                   <View style={styles.checkboxContainer}>
                     <Checkbox
-                      value={localIsRecurring}
-                      onValueChange={handleRecurringChange}
+                      value={dataCtx[editingObj].trackTaskStatus}
+                      onValueChange={(value) =>
+                        updateInputHandler("trackTaskStatus", value)
+                      }
                     />
-                    <Text style={styles.checkboxLabel}>Repeat Task</Text>
+                    <Text style={styles.checkboxLabel}>Track Task Status</Text>
+                  </View>
+                )}
+              </View>
+              {data === "goal" && (
+                <View style={styles.progressContainer}>
+                  <Text style={styles.progressText}>
+                    Progress: {Math.round(dataCtx[editingObj].progress)}%
+                  </Text>
+                  <Progress.Bar
+                    progress={dataCtx[editingObj].progress / 100}
+                    width={null}
+                    height={10}
+                    color="#4caf50"
+                    unfilledColor="#e0e0e0"
+                    borderWidth={0}
+                    borderRadius={8}
+                  />
+                </View>
+              )}
+              <RelationshipField
+                hasManyRelationship={hasManyRelationship}
+                dataCtx={dataCtx}
+                editingObj={editingObj}
+                updateEditingObj={updateEditingObj}
+                openAction={openAction}
+              />
+              {data === "task" && (
+                <>
+                  <PriorityField
+                    value={dataCtx[editingObj].priority}
+                    updateInputHandler={updateInputHandler}
+                  />
+                  <DurationField
+                    durationValue={dataCtx[editingObj].duration}
+                    updateDurationHandler={updateDurationHandler}
+                  />
+                </>
+              )}
+              <DateField
+                data={data}
+                value={formatDateForDisplay(
+                  dataCtx[editingObj][data === "task" ? "date" : "deadline"]
+                )}
+                updateDateHandler={updateDateHandler}
+              />
+
+              {data === "task" && dataCtx[editingObj].isRecurring && (
+                <View style={styles.fieldGroup}>
+                  <View style={styles.recurringInfoContainer}>
+                    <View style={styles.recurringInfoRow}>
+                      <Pressable
+                        style={styles.recurringInfoContent}
+                        onPress={() => openAction("recurring")}
+                      >
+                        <Text style={styles.recurringInfoText}>
+                          This task repeats{" "}
+                          {formatRepeat(dataCtx[editingObj].repeat)}
+                        </Text>
+                        <Text style={styles.recurringInfoSubtext}>
+                          Completed dates:{" "}
+                          {dataCtx[editingObj].completedDates?.length || 0}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        style={styles.removeRecurringButton}
+                        onPress={() => {
+                          const updatedObj = {
+                            ...dataCtx[editingObj],
+                            isRecurring: false,
+                            repeat: null,
+                            dayOfWeek: null,
+                            startDate: null,
+                            endDate: null,
+                            completedDates: [],
+                          };
+                          dataCtx[updateEditingObj](updatedObj);
+                          setLocalIsRecurring(false);
+                        }}
+                      >
+                        <Feather
+                          name="x"
+                          size={20}
+                          color="#9C27B0"
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
-              </>
-            )}
+              )}
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Description</Text>
-              <TextInput
-                style={[styles.input, styles.description]}
-                onChangeText={(value) =>
-                  updateInputHandler("description", value)
-                }
-                value={dataCtx[editingObj].description}
-                placeholder="Optional description"
-                multiline
-              />
-            </View>
-          </KeyboardAvoidingView>
-        </ScrollView>
-        <DeleteModal
-          visible={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onDelete={
-            data === "goal"
-              ? deleteGoal
-              : dataCtx[editingObj].isRecurring
-              ? deleteRecurringTaskCompletely
-              : deleteRegularTask
-          }
-          onDeleteWithTasks={data === "goal" ? deleteGoalWithTasks : () => {}}
-          onDeleteRecurringWithInstances={deleteRecurringTaskCompletely}
-          onDeleteRecurringOnly={deleteRecurringTaskInstance}
-          itemTitle={dataCtx[editingObj].title}
-          itemType={data}
-          tasksToDelete={tasksToDelete}
-          isRecurring={dataCtx[editingObj].isRecurring}
-        />
-      </View>
+              {data === "task" && !dataCtx[editingObj].isRecurring && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <View style={styles.checkboxContainer}>
+                      <Checkbox
+                        value={localIsRecurring}
+                        onValueChange={handleRecurringChange}
+                      />
+                      <Text style={styles.checkboxLabel}>Repeat Task</Text>
+                    </View>
+                  </View>
+                </>
+              )}
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.description]}
+                  onChangeText={(value) =>
+                    updateInputHandler("description", value)
+                  }
+                  value={dataCtx[editingObj].description}
+                  placeholder="Optional description"
+                  multiline
+                />
+              </View>
+            </KeyboardAvoidingView>
+          </ScrollView>
+          <Action
+            actionType={actionType}
+            sheetRef={sheetRef}
+          />
+          <DeleteModal
+            visible={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            onDelete={
+              data === "goal"
+                ? deleteGoal
+                : dataCtx[editingObj].isRecurring
+                ? deleteRecurringTaskCompletely
+                : deleteRegularTask
+            }
+            onDeleteWithTasks={data === "goal" ? deleteGoalWithTasks : () => {}}
+            onDeleteRecurringWithInstances={deleteRecurringTaskCompletely}
+            onDeleteRecurringOnly={deleteRecurringTaskInstance}
+            itemTitle={dataCtx[editingObj].title}
+            itemType={data}
+            tasksToDelete={tasksToDelete}
+            isRecurring={dataCtx[editingObj].isRecurring}
+          />
+        </View>
+      </GestureHandlerRootView>
     );
   }
 );

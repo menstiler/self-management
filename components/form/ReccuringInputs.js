@@ -1,21 +1,24 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { formatDateForDisplay } from "../../util/task.js";
+import { Picker } from "@react-native-picker/picker";
 
 function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
+  const weekDays = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
   function updateInputHandler(input, value) {
     const updatedObj = { ...dataCtx[editingObj], [input]: value };
 
     if (input === "repeat" && value === "weekly" && !updatedObj.dayOfWeek) {
-      const dayNames = [
-        "Sunday",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-      ];
+      const dayNames = weekDays;
       const today = new Date();
       const todayName = dayNames[today.getDay()];
       updatedObj.dayOfWeek = [todayName]; // Now defaults to array
@@ -74,6 +77,24 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
               Weekly
             </Text>
           </Pressable>
+          <Pressable
+            style={[
+              styles.repeatOption,
+              dataCtx[editingObj].repeat === "monthly" &&
+                styles.repeatOptionSelected,
+            ]}
+            onPress={() => updateInputHandler("repeat", "monthly")}
+          >
+            <Text
+              style={[
+                styles.repeatOptionText,
+                dataCtx[editingObj].repeat === "monthly" &&
+                  styles.repeatOptionTextSelected,
+              ]}
+            >
+              Monthly
+            </Text>
+          </Pressable>
         </View>
       </View>
 
@@ -81,15 +102,7 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Days of Week</Text>
           <View style={styles.dayOptions}>
-            {[
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday",
-            ].map((day) => {
+            {weekDays.map((day) => {
               const currentDays = Array.isArray(dataCtx[editingObj].dayOfWeek)
                 ? dataCtx[editingObj].dayOfWeek
                 : dataCtx[editingObj].dayOfWeek
@@ -126,37 +139,218 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
         </View>
       )}
 
-      <View style={styles.pickerRow}>
-        <View style={[styles.fieldGroup, styles.pickerContainer]}>
-          <Text style={styles.label}>Start Date</Text>
-          <View style={styles.pickerWrapper}>
-            <DateTimePicker
-              value={formatDateForDisplay(dataCtx[editingObj].startDate)}
-              mode="date"
-              display="default"
-              onChange={(event, date) =>
-                updateRecurringDateHandler("startDate", event, date)
-              }
-              minimumDate={new Date()}
-            />
+      {dataCtx[editingObj].repeat === "monthly" && (
+        <View style={styles.fieldGroup}>
+          <View style={{ flexDirection: "row" }}>
+            <Pressable
+              style={[
+                styles.repeatOption,
+                dataCtx[editingObj].monthlyOption !== "weekday" &&
+                  styles.repeatOptionSelected,
+                { flex: 1, marginRight: 8 },
+              ]}
+              onPress={() => updateInputHandler("monthlyOption", "day")}
+            >
+              <Text
+                style={[
+                  styles.repeatOptionText,
+                  dataCtx[editingObj].monthlyOption !== "weekday" &&
+                    styles.repeatOptionTextSelected,
+                ]}
+              >
+                Day of Month
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.repeatOption,
+                dataCtx[editingObj].monthlyOption === "weekday" && { flex: 1 }, // styles.repeatOptionSelected,
+              ]}
+              onPress={() => updateInputHandler("monthlyOption", "weekday")}
+            >
+              <Text
+                style={[
+                  styles.repeatOptionText,
+                  dataCtx[editingObj].monthlyOption === "weekday" &&
+                    styles.repeatOptionTextSelected,
+                ]}
+              >
+                Week + Day
+              </Text>
+            </Pressable>
           </View>
+          {/* Day of month */}
+          {(!dataCtx[editingObj].monthlyOption ||
+            dataCtx[editingObj].monthlyOption === "day") && (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Picker
+                selectedValue={dataCtx[editingObj].dayOfMonth || 1}
+                onValueChange={(itemValue, itemIndex) =>
+                  updateInputHandler("dayOfMonth", itemValue)
+                }
+                style={{ width: 200 }}
+              >
+                {Array.from({ length: 31 }, (_, i) => (
+                  <Picker.Item
+                    key={i + 1}
+                    label={`Day ${i + 1}`}
+                    value={i + 1}
+                  />
+                ))}
+              </Picker>
+            </View>
+          )}
+          {dataCtx[editingObj].monthlyOption === "weekday" && (
+            <View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ flexDirection: "row" }}>
+                  <Picker
+                    selectedValue={dataCtx[editingObj].dayOfMonth || 1}
+                    onValueChange={(itemValue, itemIndex) =>
+                      updateInputHandler("dayOfMonth", itemValue)
+                    }
+                    style={{ width: "50%" }}
+                  >
+                    {["First", "Second", "Third", "Fourth"].map((week) => (
+                      <Picker.Item
+                        key={week + 1}
+                        label={week}
+                        value={week + 1}
+                      />
+                    ))}
+                  </Picker>
+                  <Picker
+                    selectedValue={dataCtx[editingObj].dayOfMonth || 1}
+                    onValueChange={(itemValue, itemIndex) =>
+                      updateInputHandler("dayOfMonth", itemValue)
+                    }
+                    style={{ width: "50%" }}
+                  >
+                    {weekDays.map((weekDay) => (
+                      <Picker.Item
+                        key={weekDay + 1}
+                        label={weekDay}
+                        value={weekDay + 1}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
+      )}
 
-        <View style={[styles.fieldGroup, styles.pickerContainer]}>
-          <Text style={styles.label}>End Date</Text>
-          <View style={styles.pickerWrapper}>
-            <DateTimePicker
-              value={formatDateForDisplay(dataCtx[editingObj].endDate)}
-              mode="date"
-              display="default"
-              onChange={(event, date) =>
-                updateRecurringDateHandler("endDate", event, date)
-              }
-              minimumDate={formatDateForDisplay(dataCtx[editingObj].startDate)}
-            />
+      {(!dataCtx[editingObj].repeat ||
+        dataCtx[editingObj].repeat === "daily" ||
+        dataCtx[editingObj].repeat === "weekly") && (
+        <View style={styles.pickerRow}>
+          <View style={[styles.fieldGroup, styles.pickerContainer]}>
+            <Text style={styles.label}>Start Date</Text>
+            <View style={styles.pickerWrapper}>
+              <DateTimePicker
+                value={formatDateForDisplay(dataCtx[editingObj].startDate)}
+                mode="date"
+                display="default"
+                onChange={(event, date) =>
+                  updateRecurringDateHandler("startDate", event, date)
+                }
+                minimumDate={new Date()}
+              />
+            </View>
+          </View>
+
+          <View style={[styles.fieldGroup, styles.pickerContainer]}>
+            <Text style={styles.label}>End Date</Text>
+            <View style={styles.pickerWrapper}>
+              <DateTimePicker
+                value={formatDateForDisplay(dataCtx[editingObj].endDate)}
+                mode="date"
+                display="default"
+                onChange={(event, date) =>
+                  updateRecurringDateHandler("endDate", event, date)
+                }
+                minimumDate={formatDateForDisplay(
+                  dataCtx[editingObj].startDate
+                )}
+              />
+            </View>
           </View>
         </View>
-      </View>
+      )}
+
+      {dataCtx[editingObj].repeat === "monthly" && (
+        <View style={styles.pickerRow}>
+          <View style={[styles.fieldGroup, styles.pickerContainer]}>
+            <Text style={styles.label}>Start Month</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={
+                  dataCtx[editingObj].startDate
+                    ? new Date(dataCtx[editingObj].startDate).getMonth()
+                    : new Date().getMonth()
+                }
+                onValueChange={(itemValue, itemIndex) => {
+                  // Set the startDate to the first day of the selected month, keeping the year
+                  const current = dataCtx[editingObj].startDate
+                    ? new Date(dataCtx[editingObj].startDate)
+                    : new Date();
+                  const newDate = new Date(current.getFullYear(), itemValue, 1);
+                  updateRecurringDateHandler("startDate", null, newDate);
+                }}
+                style={{ width: 200 }}
+              >
+                {[
+                  "January",
+                  "February",
+                  "March",
+                  "April",
+                  "May",
+                  "June",
+                  "July",
+                  "August",
+                  "September",
+                  "October",
+                  "November",
+                  "December",
+                ].map((month, idx) => (
+                  <Picker.Item
+                    key={month}
+                    label={month}
+                    value={idx}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={[styles.fieldGroup, styles.pickerContainer]}>
+            <Text style={styles.label}>End Date</Text>
+            <View style={styles.pickerWrapper}>
+              <DateTimePicker
+                value={
+                  formatDateForDisplay(dataCtx[editingObj].endDate) ||
+                  new Date()
+                }
+                mode="date"
+                display="default"
+                onChange={(event, date) =>
+                  updateRecurringDateHandler("endDate", event, date)
+                }
+                minimumDate={
+                  formatDateForDisplay(dataCtx[editingObj].startDate) ||
+                  new Date()
+                }
+              />
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

@@ -5,7 +5,6 @@ import DataDetail from "./screens/DataDetail";
 import AddTask from "./screens/AddTask";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import DataContextProvider from "./store/data-context";
-import Action from "./screens/Action";
 import OverviewWrapper from "./components/OverviewWrapper";
 import DropdownMenu from "./components/DropdownMenu";
 
@@ -128,15 +127,6 @@ export default function App() {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen
-            name="Action"
-            component={Action}
-            options={{
-              presentation: "formSheet",
-              sheetAllowedDetents: "fitToContents",
-              headerShown: false,
-            }}
-          />
         </Stack.Navigator>
       </NavigationContainer>
     </DataContextProvider>
