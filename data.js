@@ -55,7 +55,7 @@ export const TASKS = [
     goals: ["1"],
     isRecurring: true,
     repeat: "weekly",
-    dayOfWeek: "Monday",
+    dayOfWeek: ["Monday", "Wednesday"],
     startDate: new Date(), // Today
     endDate: new Date(Date.now() + 12 * 7 * 24 * 60 * 60 * 1000), // 12 weeks from today
     completedDates: [], // No completed dates yet

@@ -93,14 +93,32 @@ export function getNextDueDate(task) {
   if (endDate < today) return null;
 
   // If start date is in the future, that's the next due date
-  if (startDate >= today) return startDate.toISOString().split("T")[0];
+  if (startDate >= today) {
+    if (task.repeat === "weekly" && task.dayOfWeek) {
+      // For weekly tasks, find the next occurrence of the specified day(s)
+      return getNextWeeklyDate(startDate, task.dayOfWeek);
+    }
+    return startDate.toISOString().split("T")[0];
+  }
 
   // Find the next due date that's not completed
-  const dates = generateDateRange(startDate, endDate);
-  for (const date of dates) {
-    const dateString = date.toISOString().split("T")[0];
-    if (date >= today && !task.completedDates.includes(dateString)) {
-      return dateString;
+  if (task.repeat === "weekly" && task.dayOfWeek) {
+    // For weekly tasks, find the next occurrence of the specified day(s)
+    const nextWeeklyDate = getNextWeeklyDate(today, task.dayOfWeek);
+    if (nextWeeklyDate && new Date(nextWeeklyDate) <= endDate) {
+      const dateString = nextWeeklyDate.toISOString().split("T")[0];
+      if (!task.completedDates.includes(dateString)) {
+        return dateString;
+      }
+    }
+  } else {
+    // Daily tasks - use existing logic
+    const dates = generateDateRange(startDate, endDate);
+    for (const date of dates) {
+      const dateString = date.toISOString().split("T")[0];
+      if (date >= today && !task.completedDates.includes(dateString)) {
+        return dateString;
+      }
     }
   }
 
@@ -122,6 +140,49 @@ export function getDisplayDateForRecurringTask(task) {
 
   const nextDueDate = getNextDueDate(task);
   return nextDueDate || task.date;
+}
+
+export function getNextWeeklyDate(fromDate, dayOfWeeks) {
+  if (!dayOfWeeks) return null;
+
+  const dayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  // Handle both single day and array of days
+  const days = Array.isArray(dayOfWeeks) ? dayOfWeeks : [dayOfWeeks];
+  if (days.length === 0) return null;
+
+  const currentDate = new Date(fromDate);
+  const currentDayIndex = currentDate.getDay();
+
+  // Find the next occurrence of any of the specified days
+  let closestDate = null;
+  let minDaysToAdd = Infinity;
+
+  for (const dayOfWeek of days) {
+    const targetDayIndex = dayNames.indexOf(dayOfWeek);
+    if (targetDayIndex === -1) continue;
+
+    let daysToAdd = targetDayIndex - currentDayIndex;
+    if (daysToAdd <= 0) {
+      daysToAdd += 7; // Move to next week
+    }
+
+    if (daysToAdd < minDaysToAdd) {
+      minDaysToAdd = daysToAdd;
+      closestDate = new Date(currentDate);
+      closestDate.setDate(currentDate.getDate() + daysToAdd);
+    }
+  }
+
+  return closestDate ? closestDate.toISOString().split("T")[0] : null;
 }
 
 export function formatDateForDisplay(date) {

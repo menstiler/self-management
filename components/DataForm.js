@@ -73,6 +73,7 @@ const DataForm = forwardRef(
           };
           dataCtx[updateEditingObj](updatedWithDates);
         }
+        openAction("recurring");
       },
       [dataCtx, editingObj, updateEditingObj]
     );
@@ -239,6 +240,34 @@ const DataForm = forwardRef(
       handleDeleteGoal: handleDeleteGoal,
     }));
 
+    const formatDate = (date) => {
+      return new Date(date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    };
+
+    const formatRepeat = (repeat) => {
+      switch (repeat) {
+        case "daily":
+          if (dataCtx[editingObj].endDate) {
+            return "daily until " + formatDate(dataCtx[editingObj].endDate);
+          }
+          return "daily";
+        case "weekly":
+          let weekString = "weekly";
+          if (dataCtx[editingObj].dayOfWeek) {
+            weekString += " on " + dataCtx[editingObj].dayOfWeek.join(", ");
+          }
+          if (dataCtx[editingObj].endDate) {
+            weekString += ", until " + formatDate(dataCtx[editingObj].endDate);
+          }
+          return weekString;
+        default:
+      }
+    };
+
     return (
       <View style={styles.container}>
         <ScrollView
@@ -343,19 +372,47 @@ const DataForm = forwardRef(
             />
 
             {data === "task" && dataCtx[editingObj].isRecurring && (
-              <Pressable onPress={() => openAction("recurring")}>
-                <View style={styles.fieldGroup}>
-                  <View style={styles.recurringInfoContainer}>
-                    <Text style={styles.recurringInfoText}>
-                      This is a recurring task
-                    </Text>
-                    <Text style={styles.recurringInfoSubtext}>
-                      Completed dates:{" "}
-                      {dataCtx[editingObj].completedDates?.length || 0}
-                    </Text>
+              <View style={styles.fieldGroup}>
+                <View style={styles.recurringInfoContainer}>
+                  <View style={styles.recurringInfoRow}>
+                    <Pressable
+                      style={styles.recurringInfoContent}
+                      onPress={() => openAction("recurring")}
+                    >
+                      <Text style={styles.recurringInfoText}>
+                        This task repeats{" "}
+                        {formatRepeat(dataCtx[editingObj].repeat)}
+                      </Text>
+                      <Text style={styles.recurringInfoSubtext}>
+                        Completed dates:{" "}
+                        {dataCtx[editingObj].completedDates?.length || 0}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.removeRecurringButton}
+                      onPress={() => {
+                        const updatedObj = {
+                          ...dataCtx[editingObj],
+                          isRecurring: false,
+                          repeat: null,
+                          dayOfWeek: null,
+                          startDate: null,
+                          endDate: null,
+                          completedDates: [],
+                        };
+                        dataCtx[updateEditingObj](updatedObj);
+                        setLocalIsRecurring(false);
+                      }}
+                    >
+                      <Feather
+                        name="x"
+                        size={20}
+                        color="#9C27B0"
+                      />
+                    </Pressable>
                   </View>
                 </View>
-              </Pressable>
+              </View>
             )}
 
             {data === "task" && !dataCtx[editingObj].isRecurring && (
@@ -366,7 +423,7 @@ const DataForm = forwardRef(
                       value={localIsRecurring}
                       onValueChange={handleRecurringChange}
                     />
-                    <Text style={styles.checkboxLabel}>Recurring Task</Text>
+                    <Text style={styles.checkboxLabel}>Repeat Task</Text>
                   </View>
                 </View>
               </>
@@ -466,12 +523,12 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 16,
   },
   checkboxLabel: {
     fontSize: 14,
     color: "#1A1A1A",
     marginLeft: 8,
+    fontWeight: "600",
   },
   progressContainer: {
     marginBottom: 16,
@@ -487,6 +544,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E1BEE7",
+  },
+  recurringInfoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  recurringInfoContent: {
+    flex: 1,
+  },
+  removeRecurringButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   recurringInfoText: {
     fontSize: 14,
@@ -537,5 +606,9 @@ const styles = StyleSheet.create({
   description: {
     minHeight: 80,
     textAlignVertical: "top",
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    marginLeft: 0,
+    paddingLeft: 0,
   },
 });

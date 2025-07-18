@@ -18,7 +18,7 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
       ];
       const today = new Date();
       const todayName = dayNames[today.getDay()];
-      updatedObj.dayOfWeek = todayName;
+      updatedObj.dayOfWeek = [todayName]; // Now defaults to array
     }
 
     dataCtx[updateEditingObj](updatedObj);
@@ -79,7 +79,7 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
 
       {dataCtx[editingObj].repeat === "weekly" && (
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Day of Week</Text>
+          <Text style={styles.label}>Days of Week</Text>
           <View style={styles.dayOptions}>
             {[
               "Monday",
@@ -89,27 +89,39 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
               "Friday",
               "Saturday",
               "Sunday",
-            ].map((day) => (
-              <Pressable
-                key={day}
-                style={[
-                  styles.dayOption,
-                  dataCtx[editingObj].dayOfWeek === day &&
-                    styles.dayOptionSelected,
-                ]}
-                onPress={() => updateInputHandler("dayOfWeek", day)}
-              >
-                <Text
+            ].map((day) => {
+              const currentDays = Array.isArray(dataCtx[editingObj].dayOfWeek)
+                ? dataCtx[editingObj].dayOfWeek
+                : dataCtx[editingObj].dayOfWeek
+                ? [dataCtx[editingObj].dayOfWeek]
+                : [];
+              const isSelected = currentDays.includes(day);
+
+              return (
+                <Pressable
+                  key={day}
                   style={[
-                    styles.dayOptionText,
-                    dataCtx[editingObj].dayOfWeek === day &&
-                      styles.dayOptionTextSelected,
+                    styles.dayOption,
+                    isSelected && styles.dayOptionSelected,
                   ]}
+                  onPress={() => {
+                    const newDays = isSelected
+                      ? currentDays.filter((d) => d !== day)
+                      : [...currentDays, day];
+                    updateInputHandler("dayOfWeek", newDays);
+                  }}
                 >
-                  {day.slice(0, 3)}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[
+                      styles.dayOptionText,
+                      isSelected && styles.dayOptionTextSelected,
+                    ]}
+                  >
+                    {day.slice(0, 3)}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       )}
@@ -154,7 +166,7 @@ export default ReccuringInputs;
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    marginBottom: 0,
+    marginBottom: 50,
   },
   pickerRow: {
     flexDirection: "row",
