@@ -489,8 +489,7 @@ function DataContextProvider({ children }) {
       type: "UPDATE_EDITING_TASK",
       payload: editingTaskData,
     });
-    // Only update regular tasks during editing, not recurring tasks
-    if (editingTaskData.id && !editingTaskData.isRecurring) {
+    if (editingTaskData.id) {
       updateTask(editingTaskData.id, editingTaskData);
     }
   }
@@ -514,23 +513,16 @@ function DataContextProvider({ children }) {
 
   // Helper function to get tasks for display (including recurring tasks)
   function getDisplayTasks() {
-    return state.tasks
-      .map((task) => {
-        if (task.isRecurring) {
-          const displayDate = getDisplayDateForRecurringTask(task);
-          return {
-            ...task,
-            date: displayDate,
-            // Only show if there's a due date today
-            shouldShow: shouldShowRecurringTaskToday(task),
-          };
-        }
+    return state.tasks.map((task) => {
+      if (task.isRecurring) {
+        const displayDate = getDisplayDateForRecurringTask(task);
         return {
           ...task,
-          shouldShow: true,
+          date: displayDate,
         };
-      })
-      .filter((task) => task.shouldShow);
+      }
+      return task;
+    });
   }
 
   const value = {

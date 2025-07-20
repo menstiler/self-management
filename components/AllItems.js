@@ -13,6 +13,8 @@ import {
   isSameDay,
   isSameWeek,
   hasDateInPastDays,
+  isDateInCurrentMonth,
+  hasWeeklyOccurrenceInCurrentWeek,
   capitalizeWords,
 } from "../util/task.js";
 import { SwipeListView } from "react-native-swipe-list-view";
@@ -46,13 +48,52 @@ function AllItems({ data }) {
 
   const filteredTaskByDay = [...dataCtx.tasks].filter((task) => {
     switch (filterType) {
-      case 1:
-        return isSameDay(new Date(task.date), new Date());
-      case 2:
-        return isSameWeek(task.date);
-      case 3:
-        return hasDateInPastDays(task.date, 30);
-      default:
+      case 1: // Today
+        if (task.isRecurring) {
+          // For recurring tasks, check if they have a due date today
+          return dataCtx.shouldShowRecurringTaskToday(task);
+        } else {
+          return isSameDay(new Date(task.date), new Date());
+        }
+      case 2: // This Week
+        if (task.isRecurring) {
+          if (task.repeat === "weekly") {
+            // For weekly recurring tasks, check if they have an occurrence in the current week
+            const hasOccurrence = hasWeeklyOccurrenceInCurrentWeek(task);
+            console.log(
+              "Weekly task:",
+              task.title,
+              "Has occurrence this week:",
+              hasOccurrence
+            );
+            console.log("Task data:", {
+              repeat: task.repeat,
+              dayOfWeek: task.dayOfWeek,
+              startDate: task.startDate,
+              endDate: task.endDate,
+              completedDates: task.completedDates,
+            });
+            return hasOccurrence;
+          } else {
+            // For other recurring tasks (daily), check if their next due date is within this week
+            const nextDueDate = dataCtx.getNextDueDate(task);
+            if (!nextDueDate) return false;
+            return isSameWeek(nextDueDate);
+          }
+        } else {
+          return isSameWeek(task.date);
+        }
+      case 3: // This Month
+        if (task.isRecurring) {
+          // For recurring tasks, check if their next due date is within the current month
+          const nextDueDate = dataCtx.getNextDueDate(task);
+
+          if (!nextDueDate) return false;
+          return isDateInCurrentMonth(nextDueDate);
+        } else {
+          return isDateInCurrentMonth(task.date);
+        }
+      default: // All
         return true;
     }
   });

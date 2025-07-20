@@ -401,7 +401,10 @@ const DataForm = forwardRef(
                         </Text>
                       </Pressable>
                       <Pressable
-                        style={styles.removeRecurringButton}
+                        style={({ pressed }) => [
+                          styles.removeRecurringButton,
+                          pressed && styles.removeRecurringButtonPressed,
+                        ]}
                         onPress={() => {
                           const updatedObj = {
                             ...dataCtx[editingObj],
@@ -564,7 +567,7 @@ const styles = StyleSheet.create({
   },
   recurringInfoRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
   },
   recurringInfoContent: {
@@ -573,6 +576,10 @@ const styles = StyleSheet.create({
   removeRecurringButton: {
     padding: 4,
     marginLeft: 8,
+  },
+  removeRecurringButtonPressed: {
+    transform: [{ scale: 0.9 }],
+    opacity: 0.7,
   },
   recurringInfoText: {
     fontSize: 14,

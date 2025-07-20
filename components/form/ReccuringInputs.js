@@ -21,7 +21,7 @@ function ReccuringInputs({ dataCtx, editingObj, updateEditingObj }) {
       const dayNames = weekDays;
       const today = new Date();
       const todayName = dayNames[today.getDay()];
-      updatedObj.dayOfWeek = [todayName]; // Now defaults to array
+      updatedObj.dayOfWeek = [todayName];
     }
 
     dataCtx[updateEditingObj](updatedObj);

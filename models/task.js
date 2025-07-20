@@ -13,6 +13,8 @@ export default class Task {
     dayOfWeek = null,
     startDate = null,
     endDate = null,
+    monthlyOption = null,
+    dayOfMonth = null,
     completedDates = [],
   }) {
     this.id = id;
@@ -28,6 +30,8 @@ export default class Task {
     this.dayOfWeek = dayOfWeek;
     this.startDate = startDate;
     this.endDate = endDate;
+    this.monthlyOption = monthlyOption;
+    this.dayOfMonth = dayOfMonth;
     this.completedDates = completedDates;
   }
 }
