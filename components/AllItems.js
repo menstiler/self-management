@@ -14,7 +14,7 @@ import {
   isSameWeek,
   hasDateInPastDays,
   isDateInCurrentMonth,
-  hasWeeklyOccurrenceInCurrentWeek,
+  hasRecurringTaskInCurrentWeek,
   capitalizeWords,
 } from "../util/task.js";
 import { SwipeListView } from "react-native-swipe-list-view";
@@ -57,29 +57,17 @@ function AllItems({ data }) {
         }
       case 2: // This Week
         if (task.isRecurring) {
-          if (task.repeat === "weekly") {
-            // For weekly recurring tasks, check if they have an occurrence in the current week
-            const hasOccurrence = hasWeeklyOccurrenceInCurrentWeek(task);
-            console.log(
-              "Weekly task:",
-              task.title,
-              "Has occurrence this week:",
-              hasOccurrence
-            );
-            console.log("Task data:", {
-              repeat: task.repeat,
-              dayOfWeek: task.dayOfWeek,
-              startDate: task.startDate,
-              endDate: task.endDate,
-              completedDates: task.completedDates,
-            });
-            return hasOccurrence;
-          } else {
-            // For other recurring tasks (daily), check if their next due date is within this week
-            const nextDueDate = dataCtx.getNextDueDate(task);
-            if (!nextDueDate) return false;
-            return isSameWeek(nextDueDate);
-          }
+          // For all recurring tasks, check if their date range overlaps with the current week
+          const hasOccurrence = hasRecurringTaskInCurrentWeek(task);
+          console.log(
+            "Recurring task:",
+            task.title,
+            "Repeat:",
+            task.repeat,
+            "Has occurrence this week:",
+            hasOccurrence
+          );
+          return hasOccurrence;
         } else {
           return isSameWeek(task.date);
         }

@@ -7,6 +7,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import DataContextProvider from "./store/data-context";
 import OverviewWrapper from "./components/OverviewWrapper";
 import DropdownMenu from "./components/DropdownMenu";
+import Dashboard from "./components/Dashboard";
+import { Ionicons } from "@expo/vector-icons";
 
 const Stack = createNativeStackNavigator();
 const BottomTabs = createBottomTabNavigator();
@@ -20,10 +22,31 @@ function TaskOverview() {
         }}
       >
         <BottomTabs.Screen
+          name="Dashboard"
+          component={Dashboard}
+          options={{
+            title: "Dashboard",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="stats-chart"
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <BottomTabs.Screen
           name="GoalList"
           component={DataList}
           options={{
             title: "Goals",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="flag"
+                size={size}
+                color={color}
+              />
+            ),
           }}
           initialParams={{
             data: "goals",
@@ -34,6 +57,13 @@ function TaskOverview() {
           component={DataList}
           options={{
             title: "Tasks",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="list"
+                size={size}
+                color={color}
+              />
+            ),
           }}
           initialParams={{
             data: "tasks",
@@ -44,6 +74,13 @@ function TaskOverview() {
           component={AddTask}
           options={{
             tabBarLabel: "New Task",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="add-circle"
+                size={size}
+                color={color}
+              />
+            ),
           }}
         />
       </BottomTabs.Navigator>

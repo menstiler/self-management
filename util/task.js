@@ -74,9 +74,8 @@ export function isDateInCurrentMonth(taskDate) {
   return taskYear === currentYear && taskMonth === currentMonth;
 }
 
-export function hasWeeklyOccurrenceInCurrentWeek(task) {
-  if (!task.isRecurring || task.repeat !== "weekly" || !task.dayOfWeek) {
-    console.log("Early return - not recurring or not weekly or no dayOfWeek");
+export function hasRecurringTaskInCurrentWeek(task) {
+  if (!task.isRecurring) {
     return false;
   }
 
@@ -90,32 +89,16 @@ export function hasWeeklyOccurrenceInCurrentWeek(task) {
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
 
-  console.log(
-    "Current week:",
-    weekStart.toISOString().split("T")[0],
-    "to",
-    weekEnd.toISOString().split("T")[0]
-  );
-
   // Check if the task's date range overlaps with the current week
   const startDate = new Date(task.startDate);
   const endDate = new Date(task.endDate);
 
-  console.log(
-    "Task date range:",
-    startDate.toISOString().split("T")[0],
-    "to",
-    endDate.toISOString().split("T")[0]
-  );
-
   // If the task's end date is before the week starts, or start date is after the week ends, no overlap
   if (endDate < weekStart || startDate > weekEnd) {
-    console.log("No overlap between task range and current week");
     return false;
   }
 
   // There is an overlap, so the task should show up this week
-  console.log("Task has occurrences in current week");
   return true;
 }
 
