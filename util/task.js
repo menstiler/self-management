@@ -140,7 +140,11 @@ export function getNextDueDate(task) {
   if (startDate >= today) {
     if (task.repeat === "weekly" && task.dayOfWeek) {
       // For weekly tasks, find the next occurrence of the specified day(s)
-      return getNextWeeklyDate(startDate, task.dayOfWeek);
+      const nextWeeklyDate = getNextWeeklyDate(startDate, task.dayOfWeek);
+      if (nextWeeklyDate instanceof Date) {
+        return nextWeeklyDate.toISOString().split("T")[0];
+      }
+      return null;
     }
     return startDate.toISOString().split("T")[0];
   }
@@ -149,7 +153,7 @@ export function getNextDueDate(task) {
   if (task.repeat === "weekly" && task.dayOfWeek) {
     // For weekly tasks, find the next occurrence of the specified day(s)
     const nextWeeklyDate = getNextWeeklyDate(today, task.dayOfWeek);
-    if (nextWeeklyDate && new Date(nextWeeklyDate) <= endDate) {
+    if (nextWeeklyDate instanceof Date && nextWeeklyDate <= endDate) {
       const dateString = nextWeeklyDate.toISOString().split("T")[0];
       if (!task.completedDates.includes(dateString)) {
         return dateString;
@@ -226,7 +230,7 @@ export function getNextWeeklyDate(fromDate, dayOfWeeks) {
     }
   }
 
-  return closestDate ? closestDate.toISOString().split("T")[0] : null;
+  return closestDate ? closestDate : null;
 }
 
 export function formatDateForDisplay(date) {

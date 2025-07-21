@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import { capitalizeWords } from "../util/task.js";
 import CircularProgress from "react-native-circular-progress-indicator";
 import { useGoalMeta } from "../hooks/useGoalMeta";
+import { Ionicons } from "@expo/vector-icons";
 
 function DataItem({ data, item }) {
   const navigation = useNavigation();
@@ -30,7 +31,23 @@ function DataItem({ data, item }) {
     <Pressable onPress={() => selectItemHandler(item.id)}>
       <View style={styles.topRow}>
         <View style={styles.titleWrapper}>
-          <Text style={styles.goalTitle}>{item.title}</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Text style={styles.goalTitle}>{item.title}</Text>
+            {/* Recurring icon for tasks */}
+            {data === "task" && item.isRecurring && (
+              <Ionicons
+                name="repeat"
+                size={16}
+                color="#9C27B0"
+                style={styles.recurringIcon}
+              />
+            )}
+          </View>
           <Text style={styles.goalProgressText}>{capitalizeWords(status)}</Text>
           {data === "goal" && (
             <Text>
@@ -40,6 +57,18 @@ function DataItem({ data, item }) {
             </Text>
           )}
         </View>
+        {/* Priority badge for tasks at top right */}
+        {data === "task" && item.priority && (
+          <View
+            style={[
+              styles.priorityBadge,
+              styles[`priority${item.priority}`],
+              styles.priorityTopRight,
+            ]}
+          >
+            <Text style={styles.priorityText}>{item.priority}</Text>
+          </View>
+        )}
         {data === "goal" && (
           <CircularProgress
             value={progress}
@@ -89,5 +118,40 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 6,
     borderRadius: 3,
+  },
+  recurringIcon: {
+    fontSize: 16,
+    marginLeft: 6,
+    marginBottom: 8,
+    color: "#9C27B0",
+  },
+  priorityBadge: {
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  priorityhigh: {
+    backgroundColor: "#FFEBEE",
+  },
+  prioritymedium: {
+    backgroundColor: "#FFF3E0",
+  },
+  prioritylow: {
+    backgroundColor: "#E8F5E9",
+  },
+  priorityText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    color: "#C62828", // red for high
+  },
+  priorityTopRight: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    zIndex: 1,
   },
 });

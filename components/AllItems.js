@@ -59,14 +59,6 @@ function AllItems({ data }) {
         if (task.isRecurring) {
           // For all recurring tasks, check if their date range overlaps with the current week
           const hasOccurrence = hasRecurringTaskInCurrentWeek(task);
-          console.log(
-            "Recurring task:",
-            task.title,
-            "Repeat:",
-            task.repeat,
-            "Has occurrence this week:",
-            hasOccurrence
-          );
           return hasOccurrence;
         } else {
           return isSameWeek(task.date);
